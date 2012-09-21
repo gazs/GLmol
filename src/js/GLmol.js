@@ -47,12 +47,12 @@ THREE.Matrix4.prototype.isIdentity = function() {
    return true;
 };
 
-function GLmol(id, suppressAutoload) {
-   if (id) this.create(id, suppressAutoload);
+function GLmol(queryselector, suppressAutoload) {
+   if (id) this.create(queryselector, suppressAutoload);
    return true;
 }
 
-GLmol.prototype.create = function(id, suppressAutoload) {
+GLmol.prototype.create = function(queryselector, suppressAutoload) {
    this.Nucleotides = ['  G', '  A', '  T', '  C', '  U', ' DG', ' DA', ' DT', ' DC', ' DU'];
    this.ElementColors = {"H": 0xCCCCCC, "C": 0xAAAAAA, "O": 0xCC0000, "N": 0x0000CC, "S": 0xCCCC00, "P": 0x6622CC,
                          "F": 0x00CC00, "CL": 0x00CC00, "BR": 0x882200, "I": 0x6600AA,
@@ -62,10 +62,10 @@ GLmol.prototype.create = function(id, suppressAutoload) {
                    "F": 1.47, "P": 1.80, "S": 1.80, "CL": 1.75, "BR": 1.85, "SE": 1.90,
                    "ZN": 1.39, "CU": 1.4, "NI": 1.63};
 
-   this.id = id;
+   this.queryselector = queryselector;
    this.aaScale = 1; // or 2
 
-   this.container = $('#' + this.id);
+   this.container = $(this.queryselector);
    this.WIDTH = this.container.width() * this.aaScale, this.HEIGHT = this.container.height() * this.aaScale;
    this.ASPECT = this.WIDTH / this.HEIGHT;
    this.NEAR = 1, FAR = 800;
@@ -1625,7 +1625,8 @@ GLmol.prototype.rebuildScene = function() {
 };
 
 GLmol.prototype.loadMolecule = function(repressZoom) {
-   this.loadMoleculeStr(repressZoom, $('#' + this.id + '_src').val());
+    var source = document.querySelector(this.queryselector + '_src').innerHTML;
+    this.loadMoleculeStr(repressZoom, source);
 };
 
 GLmol.prototype.loadMoleculeStr = function(repressZoom, source) {
@@ -1638,11 +1639,12 @@ GLmol.prototype.loadMoleculeStr = function(repressZoom, source) {
    if (!this.parseSDF(source)) this.parseXYZ(source);
    console.log("parsed in " + (+new Date() - time) + "ms");
    
-   var title = $('#' + this.id + '_pdbTitle');
+   var title = document.querySelector(this.queryselector + '_pdbTitle');
    var titleStr = '';
    if (this.protein.pdbID != '') titleStr += '<a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=' + this.protein.pdbID + '">' + this.protein.pdbID + '</a>';
    if (this.protein.title != '') titleStr += '<br>' + this.protein.title;
-   title.html(titleStr);
+
+   if (title) { title.innerHTML = titleStr; }// jQ's method is more thorough
 
    this.rebuildScene(true);
    if (repressZoom == undefined || !repressZoom) this.zoomInto(this.getAllAtoms());
@@ -1754,7 +1756,7 @@ GLmol.prototype.enableMouse = function() {
       if (!me.scene) return;
       if (!me.isDragging) return;
       var mode = 0;
-      var modeRadio = $('input[name=' + me.id + '_mouseMode]:checked');
+      var modeRadio = document.querySelectorAll('input[name=' + me.id + '_mouseMode]:checked');
       if (modeRadio.length > 0) mode = parseInt(modeRadio.val());
 
       me.adjustPos(ev); var x = ev.x, y = ev.y;

@@ -48,7 +48,7 @@ THREE.Matrix4.prototype.isIdentity = function() {
 };
 
 function GLmol(queryselector, suppressAutoload) {
-   if (id) this.create(queryselector, suppressAutoload);
+   if (queryselector) this.create(queryselector, suppressAutoload);
    return true;
 }
 

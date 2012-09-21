@@ -1534,7 +1534,7 @@ GLmol.prototype.fs_billboard = "uniform sampler2D map;\n varying vec2 vUv;\n"+
 GLmol.prototype.billboard = function (tex) {
    var geo = this.getBillboardMesh();
    var sm = new THREE.ShaderMaterial({uniforms: 
-     {map: {type: 't', value: 0, texture: tex}, 
+     {map: {type: 't', texture: tex},
       width: {type: 'f', value: tex.image.width}, height: {type: 'f', value: tex.image.height}}});
    sm.vertexShader = this.vs_billboard;
    sm.fragmentShader = this.fs_billboard;

@@ -47,7 +47,6 @@ THREE.Matrix4.prototype.isIdentity = function() {
    return true;
 };
 
-var GLmol = (function() {
 function GLmol(id, suppressAutoload) {
    if (id) this.create(id, suppressAutoload);
    return true;
@@ -1808,6 +1807,3 @@ GLmol.prototype.show = function() {
 GLmol.prototype.doFunc = function(func) {
     func(this);
 };
-
-return GLmol;
-}());

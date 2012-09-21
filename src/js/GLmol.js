@@ -1696,7 +1696,8 @@ GLmol.prototype.enableMouse = function() {
       me.show();
    });
    glDOM.bind("contextmenu", function(ev) {ev.preventDefault();});
-   $('body').bind('mouseup touchend', function(ev) {
+
+   glDOM.bind('mouseup touchend', function(ev) {
       me.isDragging = false;
 
       me.adjustPos(ev); var x = ev.x, y = ev.y;

@@ -364,7 +364,7 @@ GLmol.prototype.parsePDB2 = function (str) {
             if (type === 290 && line.substr(13, 5) === 'SMTRY') {
                 n = parseInt(line[18], 10) - 1;
                 m = parseInt(line.substr(21, 2), 10);
-                if (protein.symMat[m] === undefined) {
+                if (!protein.symMat[m]) {
                     protein.symMat[m] = new THREE.Matrix4().identity();
                 }
                 protein.symMat[m].elements[n] = parseFloat(line.substr(24, 9));
@@ -374,7 +374,7 @@ GLmol.prototype.parsePDB2 = function (str) {
             } else if (type === 350 && line.substr(13, 5) === 'BIOMT') {
                 n = parseInt(line[18], 10) - 1;
                 m = parseInt(line.substr(21, 2), 10);
-                if (protein.biomtMatrices[m] === undefined) {
+                if (!protein.biomtMatrices[m]) {
                     protein.biomtMatrices[m] = new THREE.Matrix4().identity();
                 }
                 protein.biomtMatrices[m].elements[n] = parseFloat(line.substr(24, 9));
@@ -390,7 +390,7 @@ GLmol.prototype.parsePDB2 = function (str) {
         } else if (recordName === 'HEADER') {
             protein.pdbID = line.substr(62, 4);
         } else if (recordName === 'TITLE ') {
-            if (protein.title === undefined) {
+            if (!protein.title ) {
                 protein.title = "";
             } else {
                 protein.title += line.substr(10, 70) + "\n"; // CHECK: why 60 is not enough???
@@ -403,7 +403,7 @@ GLmol.prototype.parsePDB2 = function (str) {
    // Assign secondary structures
     for (i = 0; i < atoms.length; i++) {
         atom = atoms[i];
-        if (atom === undefined) { continue; }
+        if (!atom) { continue; }
 
         found = false;
         // MEMO: Can start chain and end chain differ?
@@ -498,7 +498,7 @@ GLmol.prototype.drawAtomsAsSphere = function (group, atomlist, defaultRadius, fo
 
     for (i = 0; i < atomlist.length; i++) {
         atom = this.atoms[atomlist[i]];
-        if (atom === undefined) { continue; }
+        if (!atom) { continue; }
 
         sphereMaterial = new THREE.MeshLambertMaterial({color: atom.color});
         sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
@@ -524,7 +524,7 @@ GLmol.prototype.drawAtomsAsIcosahedron = function (group, atomlist, defaultRadiu
 
     for (i = 0; i < atomlist.length; i++) {
         atom = this.atoms[atomlist[i]];
-        if (atom === undefined) { continue; }
+        if (!atom) { continue; }
 
         mat = new THREE.MeshLambertMaterial({color: atom.color});
         sphere = new THREE.Mesh(geo, mat);
@@ -599,11 +599,11 @@ GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, igno
     for (_i = 0; _i < nAtoms; _i++) {
         i = atomlist[_i];
         atom1 = this.atoms[i];
-        if (atom1 === undefined) { continue; }
+        if (!atom1) { continue; }
         for (_j = _i + 1; _j < _i + 30 && _j < nAtoms; _j++) {
             j = atomlist[_j];
             atom2 = this.atoms[j];
-            if (atom2 === undefined) { continue; }
+            if (!atom2) { continue; }
             order = this.isConnected(atom1, atom2);
             if (order === 0) { continue; }
             atom1.connected = atom2.connected = true;
@@ -614,7 +614,7 @@ GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, igno
             if (j < i + 30) { continue; } // be conservative!
             if (atomlist.indexOf(j) === -1) { continue; }
             atom2 = this.atoms[j];
-            if (atom2 === undefined) { continue; }
+            if (!atom2) { continue; }
             atom1.connected = atom2.connected = true;
             this.drawBondAsStickSub(group, atom1, atom2, bondR, (!!multipleBonds) ? atom1.bondOrder[_j] : 1);
         }
@@ -625,7 +625,7 @@ GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, igno
 
 GLmol.prototype.defineCell = function () {
     var p = this.protein;
-    if (p.a === undefined) { return; }
+    if (!p.a) { return; }
 
     p.ax = p.a;
     p.ay = 0;
@@ -651,7 +651,7 @@ GLmol.prototype.drawUnitcell = function (group) {
         line,
         i;
 
-    if (p.a === undefined) { return; }
+    if (!p.a) { return; }
 
     vertices = [[0, 0, 0], [p.ax, p.ay, p.az], [p.bx, p.by, p.bz], [p.ax + p.bx, p.ay + p.by, p.az + p.bz],
           [p.cx, p.cy, p.cz], [p.cx + p.ax, p.cy + p.ay,  p.cz + p.az], [p.cx + p.bx, p.cy + p.by, p.cz + p.bz], [p.cx + p.ax + p.bx, p.cy + p.ay + p.by, p.cz + p.az + p.bz]];
@@ -768,11 +768,11 @@ GLmol.prototype.drawBondsAsLine = function (group, atomlist, lineWidth) {
     for (_i = 0; _i < nAtoms; _i++) {
         i = atomlist[_i];
         atom1 = this.atoms[i];
-        if (atom1 === undefined) { continue; }
+        if (!atom1) { continue; }
         for (_j = _i + 1; _j < _i + 30 && _j < nAtoms; _j++) {
             j = atomlist[_j];
             atom2 = this.atoms[j];
-            if (atom2 === undefined) { continue; }
+            if (!atom2) { continue; }
             order = this.isConnected(atom1, atom2);
             if (order === 0) { continue; }
 
@@ -783,7 +783,7 @@ GLmol.prototype.drawBondsAsLine = function (group, atomlist, lineWidth) {
             if (j < i + 30) { continue; } // be conservative!
             if (atomlist.indexOf(j) === -1) { continue; }
             atom2 = this.atoms[j];
-            if (atom2 === undefined) { continue; }
+            if (!atom2) { continue; }
             this.drawBondsAsLineSub(geo, atom1, atom2, atom1.bondOrder[_j]);
         }
     }
@@ -798,7 +798,7 @@ GLmol.prototype.drawBondsAsLine = function (group, atomlist, lineWidth) {
 GLmol.prototype.drawSmoothCurve = function (group, _points, width, colors, div) {
     if (_points.length === 0) { return; }
 
-    div = (div === undefined) ? 5 : div;
+    div = (div) ? 5 : div;
 
     var geo = new THREE.Geometry(),
         points = this.subdivide(_points, div),
@@ -831,7 +831,7 @@ GLmol.prototype.drawAsCross = function (group, atomlist, delta) {
 
     for (i = 0, lim = atomlist.length; i < lim; i++) {
         atom = this.atoms[atomlist[i]];
-        if (atom === undefined) { continue; }
+        if (!atom) { continue; }
 
         c = new TCo(atom.color);
         for (j = 0; j < 6; j++) {
@@ -949,12 +949,12 @@ GLmol.prototype.drawMainchainCurve = function (group, atomlist, curveWidth, atom
         currentResi,
         i,
         atom;
-    if (div === undefined) { div = 5; }
+    if (!div) { div = 5; }
 
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if ((atom.atom === atomName) && !atom.hetflag) {
                 if (currentChain !== atom.chain || currentResi + 1 !== atom.resi) {
@@ -984,7 +984,7 @@ GLmol.prototype.drawMainchainTube = function (group, atomlist, atomName, radius)
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if ((atom.atom === atomName) && !atom.hetflag) {
                 if (currentChain !== atom.chain || currentResi + 1 !== atom.resi) {
@@ -994,7 +994,7 @@ GLmol.prototype.drawMainchainTube = function (group, atomlist, atomName, radius)
                     radii = [];
                 }
                 points.push(new TV3(atom.x, atom.y, atom.z));
-                if (radius === undefined) {
+                if (radius) {
                     radii.push((atom.b > 0) ? atom.b / 100 : 0.3);
                 } else {
                     radii.push(radius);
@@ -1173,7 +1173,7 @@ GLmol.prototype.drawStrand = function (group, atomlist, num, div, fill, coilWidt
     num = num || this.strandDIV;
     div = div || this.axisDIV;
     coilWidth = coilWidth || this.coilWidth;
-    doNotSmoothen = (doNotSmoothen === undefined) ? false : doNotSmoothen;
+    doNotSmoothen = !!doNotSmoothen;
     helixSheetWidth = helixSheetWidth || this.helixSheetWidth;
 
     var points = [],
@@ -1199,7 +1199,7 @@ GLmol.prototype.drawStrand = function (group, atomlist, num, div, fill, coilWidt
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if ((atom.atom === 'O' || atom.atom === 'CA') && !atom.hetflag) {
                 if (atom.atom === 'CA') {
@@ -1229,7 +1229,7 @@ GLmol.prototype.drawStrand = function (group, atomlist, num, div, fill, coilWidt
                     O.subSelf(currentCA);
                     O.normalize(); // can be omitted for performance
                     O.multiplyScalar((ss === 'c') ? coilWidth : helixSheetWidth);
-                    if (prevCO !== undefined && O.dot(prevCO) < 0) { O.negate(); }
+                    if (prevCO && O.dot(prevCO) < 0) { O.negate(); }
                     prevCO = O;
                     for (j = 0; j < num; j++) {
                         delta = -1 + 2 / (num - 1) * j;
@@ -1258,7 +1258,8 @@ GLmol.prototype.drawNucleicAcidLadderSub = function (geo, lineGeo, atoms, color)
         lim;
 
     function isNotUndefined(atom) {
-        return atom !== undefined;
+      // assumption: glmol actually wants truthyness
+        return !!atom
     }
 
     if ([atoms[0], atoms[1], atoms[2], atoms[3], atoms[4], atoms[5]].every(isNotUndefined)) {
@@ -1454,7 +1455,7 @@ GLmol.prototype.drawStrandNucleicAcid = function (group, atomlist, num, div, fil
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) {
+            if (!atom) {
                 continue;
             }
 
@@ -1493,7 +1494,7 @@ GLmol.prototype.drawStrandNucleicAcid = function (group, atomlist, num, div, fil
                     O = new TV3(atom.x, atom.y, atom.z);
                     O.subSelf(currentO3);
                     O.normalize().multiplyScalar(nucleicAcidWidth);  // TODO: refactor
-                    if (prevOO !== undefined && O.dot(prevOO) < 0) {
+                    if (prevOO && O.dot(prevOO) < 0) {
                         O.negate();
                     }
                     prevOO = O;
@@ -1618,7 +1619,7 @@ GLmol.prototype.getAtomsWithin = function (atomlist, extent) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
 
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
             if (atom.x < extent[0][0] || atom.x > extent[1][0]) { continue; }
             if (atom.y < extent[0][1] || atom.y > extent[1][1]) { continue; }
             if (atom.z < extent[0][2] || atom.z > extent[1][2]) { continue; }
@@ -1649,7 +1650,7 @@ GLmol.prototype.getExtent = function (atomlist) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
             cnt++;
 
             xsum += atom.x;
@@ -1675,7 +1676,7 @@ GLmol.prototype.getResiduesById = function (atomlist, resi) { // FIXME: this is 
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if (resi.indexOf(atom.resi) !== -1) { ret.push(atom.serial); }
         }
@@ -1691,7 +1692,7 @@ GLmol.prototype.getResidueBySS = function (atomlist, ss) { // FIXME and again.
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if (ss.indexOf(atom.ss) !== -1) { ret.push(atom.serial); }
         }
@@ -1711,7 +1712,7 @@ GLmol.prototype.getChain = function (atomlist, chain) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if (chains[atom.chain]) { ret.push(atom.serial); }
         }
@@ -1740,11 +1741,11 @@ GLmol.prototype.colorByAtom = function (atomlist, colors) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             c = colors[atom.elem];
-            if (c === undefined) { c = this.ElementColors[atom.elem]; }
-            if (c === undefined) { c = this.defaultColor; }
+            if (!c) { c = this.ElementColors[atom.elem]; }
+            if (!c) { c = this.defaultColor; }
             atom.color = c;
         }
     }
@@ -1759,7 +1760,7 @@ GLmol.prototype.colorByStructure = function (atomlist, helixColor, sheetColor, c
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if (!colorSidechains && (atom.atom !== 'CA' || atom.hetflag)) { continue; }
             if (atom.ss[0] === 's') {
@@ -1783,7 +1784,7 @@ GLmol.prototype.colorByBFactor = function (atomlist, colorSidechains) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if (atom.hetflag) { continue; }
             if (colorSidechains || atom.atom === 'CA' || atom.atom === 'O3\'') {
@@ -1797,7 +1798,7 @@ GLmol.prototype.colorByBFactor = function (atomlist, colorSidechains) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if (atom.hetflag) { continue; }
             if (colorSidechains || atom.atom === 'CA' || atom.atom === 'O3\'') {
@@ -1819,7 +1820,7 @@ GLmol.prototype.colorByChain = function (atomlist, colorSidechains) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if (atom.hetflag) { continue; }
             if (colorSidechains || atom.atom === 'CA' || atom.atom === 'O3\'') {
@@ -1882,7 +1883,7 @@ GLmol.prototype.colorChainbow = function (atomlist, colorSidechains) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'') && !atom.hetflag) {
                 cnt++;
@@ -1896,7 +1897,7 @@ GLmol.prototype.colorChainbow = function (atomlist, colorSidechains) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
 
             if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'') && !atom.hetflag) {
                 color = new TCo(0);
@@ -1909,7 +1910,7 @@ GLmol.prototype.colorChainbow = function (atomlist, colorSidechains) {
 };
 
 GLmol.prototype.drawSymmetryMates2 = function (group, asu, matrices) {
-    if (matrices === undefined) { return; }
+    if (!matrices) { return; }
     asu.matrixAutoUpdate = false;
 
     var cnt = 1,
@@ -1936,7 +1937,7 @@ GLmol.prototype.drawSymmetryMates2 = function (group, asu, matrices) {
 
 
 GLmol.prototype.drawSymmetryMatesWithTranslation2 = function (group, asu, matrices) {
-    if (matrices === undefined) { return; }
+    if (!matrices) { return; }
     var p = this.protein,
         i,
         a,
@@ -1950,7 +1951,7 @@ GLmol.prototype.drawSymmetryMatesWithTranslation2 = function (group, asu, matric
 
     for (i = 0; i < matrices.length; i++) {
         mat = matrices[i];
-        if (mat === undefined) { continue; }
+        if (!mat) { continue; }
 
         for (a = -1; a <= 0; a++) {
             for (b = -1; b <= 0; b++) {
@@ -2188,7 +2189,7 @@ GLmol.prototype.enableMouse = function () {
         ev.preventDefault();
         if (!me.scene) { return; }
         me.adjustPos(ev);
-        if (ev.x === undefined) { return; }
+        if (!ev.x) { return; }
         me.isDragging = true;
         me.mouseButton = ev.which;
         me.mouseStartX = ev.x;
@@ -2218,7 +2219,7 @@ GLmol.prototype.enableMouse = function () {
         me.isDragging = false;
 
         me.adjustPos(ev);
-        if (x === undefined) { return; }
+        if (x) { return; }
         dx = x - me.mouseStartX;
         dy = y - me.mouseStartY;
         r = Math.sqrt(dx * dx + dy * dy);
@@ -2234,7 +2235,7 @@ GLmol.prototype.enableMouse = function () {
         nearest = [1, {}, new TV3(0, 0, 1000)];
         for (i = 0, ilim = me.atoms.length; i < ilim; i++) {
             atom = me.atoms[i];
-            if (atom === undefined) { continue; }
+            if (!atom) { continue; }
             if (atom.resn === "HOH") { continue; }
 
             v = new TV3(atom.x, atom.y, atom.z);
@@ -2246,7 +2247,7 @@ GLmol.prototype.enableMouse = function () {
             if (r2 < nearest[0]) { nearest = [r2, atom, v]; }
         }
         atom = nearest[1];
-        if (atom === undefined) { return; }
+        if (!atom) { return; }
         bb = me.billboard(me.createTextTex(atom.chain + ":" + atom.resn + ":" + atom.resi, "30", "#ffffff"));
         bb.position.set(atom.x, atom.y, atom.z);
         me.modelGroup.add(bb);
@@ -2276,7 +2277,7 @@ GLmol.prototype.enableMouse = function () {
         me.adjustPos(ev);
         x = ev.x;
         y = ev.y;
-        if (x === undefined) { return; }
+        if (x) { return; }
         dx = (x - me.mouseStartX) / me.WIDTH;
         dy = (y - me.mouseStartY) / me.HEIGHT;
         r = Math.sqrt(dx * dx + dy * dy);

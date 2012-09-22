@@ -174,7 +174,7 @@ addTab('#glmol01_srcbox', '400px', 0);
 addTab('#glmol01_viewbox', '400px', 1);
 addTab('#glmol01_infobox', '400px', 2);
 
-var glmol01 = new GLmol('glmol01', true);
+var glmol01 = new GLmol('#glmol01', true);
 var query = window.location.search.substring(1);
 if (query == '') download('pdb:2POR');
 else download(query);
@@ -243,7 +243,7 @@ function saveImage() {
 }
 
 $('#glmol01_reload').click(function(ev) {
-   glmol01.defineRepresentation = defineRepFromController;
+   // glmol01.defineRepresentation = defineRepFromController;
    glmol01.rebuildScene();
    glmol01.show();
 });
@@ -257,7 +257,8 @@ var time = new Date();
    var all = this.getAllAtoms();
    if ($(idHeader + 'biomt').attr('checked') && this.protein.biomtChains != "") all = this.getChain(all, this.protein.biomtChains);
    var allHet = this.getHetatms(all);
-   var hetatm = this.removeSolvents(allHet);
+   //var hetatm = this.removeSolvents(allHet);
+   hetatm = this.getHetatms(all).filter(isNotSolvent);
 
 console.log("selection " + (+new Date() - time)); time = new Date();
 

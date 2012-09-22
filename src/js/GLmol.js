@@ -38,10 +38,7 @@ THREE.ShaderLib.lambert.vertexShader = THREE.ShaderLib.lambert.vertexShader.repl
 var TV3 = THREE.Vector3, TF3 = THREE.Face3, TCo = THREE.Color;
 
 THREE.Geometry.prototype.colorAll = function (color) {
-    var i;
-    for (i = 0; i < this.faces.length; i++) {
-        this.faces[i].color = color;
-    }
+  this.faces.forEach(function (face) { face.color = color })
 };
 
 THREE.Matrix4.prototype.isIdentity = function () {
@@ -55,7 +52,7 @@ THREE.Matrix4.prototype.isIdentity = function () {
 };
 
 function GLmol(queryselector, suppressAutoload) {
-    if (queryselector) { this.create(queryselector, suppressAutoload); }
+    if (queryselector) { this.create('#' + queryselector, suppressAutoload); }
     return true;
 }
 
@@ -396,7 +393,7 @@ GLmol.prototype.parsePDB2 = function (str) {
                 protein.title += line.substr(10, 70) + "\n"; // CHECK: why 60 is not enough???
             }
         } else if (recordName === 'COMPND') {
-            console.log("CMPND record unimplemented"); // TODO: Implement me!
+            console.warn("CMPND record unimplemented"); // TODO: Implement me!
         }
     }
 
@@ -603,7 +600,9 @@ GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, igno
         for (_j = _i + 1; _j < _i + 30 && _j < nAtoms; _j++) {
             j = atomlist[_j];
             atom2 = this.atoms[j];
-            if (!atom2) { continue; }
+            if (!atom2) {
+              continue;
+            }
             order = this.isConnected(atom1, atom2);
             if (order === 0) { continue; }
             atom1.connected = atom2.connected = true;
@@ -1105,7 +1104,7 @@ GLmol.prototype.drawThinStrip = function (group, p1, p2, colors, div) {
 
 
 GLmol.prototype.IcosahedronGeometry = function () {
-    if (!this.icosahedron) { this.icosahedron = new THREE.IcosahedronGeometry(1); }
+    this.icosahedron = this.icosahedron || new THREE.IcosahedronGeometry(1);
     return this.icosahedron;
 };
 
@@ -1146,7 +1145,7 @@ GLmol.prototype.drawHelixAsCylinder = function (group, atomlist, radius) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined || atom.hetflag) { continue; }
+            if (!atom || atom.hetflag) { continue; }
             if ((atom.ss !== 'h' && atom.ss !== 's') || atom.ssend || atom.ssbegin) { others.push(atom.serial); }
             if (atom.ss === 's') { beta.push(atom.serial); }
             if (atom.atom !== 'CA') { continue; }
@@ -1166,7 +1165,7 @@ GLmol.prototype.drawHelixAsCylinder = function (group, atomlist, radius) {
 };
 
 GLmol.prototype.drawCartoon = function (group, atomlist, doNotSmoothen, thickness) {
-    this.drawStrand(group, atomlist, 2, undefined, true, undefined, undefined, doNotSmoothen, thickness);
+  this.drawStrand(group, atomlist, 2, undefined, true, undefined, undefined, doNotSmoothen, thickness);
 };
 
 GLmol.prototype.drawStrand = function (group, atomlist, num, div, fill, coilWidth, helixSheetWidth, doNotSmoothen, thickness) {
@@ -1307,7 +1306,7 @@ GLmol.prototype.drawNucleicAcidLadder = function (group, atomlist) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined || atom.hetflag) { continue; }
+            if (!atom || atom.hetflag) { continue; }
 
             if (atom.resi !== currentResi || atom.chain !== currentChain) {
                 this.drawNucleicAcidLadderSub(geo, lineGeo, currentComponent, color);
@@ -1344,7 +1343,7 @@ GLmol.prototype.drawNucleicAcidStick = function (group, atomlist) {
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined || atom.hetflag) { continue; }
+            if (!atom || atom.hetflag) { continue; }
 
             if (atom.resi !== currentResi || atom.chain !== currentChain) {
                 if (start !== null && end !== null) {
@@ -1387,7 +1386,7 @@ GLmol.prototype.drawNucleicAcidLine = function (group, atomlist) {
         if (atomlist.hasOwnProperty(i)) {
 
             atom = this.atoms[atomlist[i]];
-            if (atom === undefined || atom.hetflag) { continue; }
+            if (!atom || atom.hetflag) { continue; }
 
             if (atom.resi !== currentResi || atom.chain !== currentChain) {
                 if (start !== null && end !== null) {
@@ -1561,7 +1560,7 @@ GLmol.prototype.drawDottedLines = function (group, points, color) {
 
 /* helper functions, generalize them! */
 function isNotUndefined(atom) {
-    return atom !== undefined;
+    return !!atom;
 }
 function hasHetflag(atom) {
     return !!atom.hetflag;
@@ -1585,16 +1584,26 @@ GLmol.prototype.getAllAtoms = function () {
     return this.atoms.map(getAtomSerial);
 };
 
+GLmol.prototype.getAtoms = function (atomlist) {
+  return this.atoms.filter(
+    function(atom,index){
+      if (atomlist.indexOf(index) != -1) {
+        return true;
+      }
+    }
+  );
+}
+
 GLmol.prototype.getHetatms = function (atomlist) {
-    return atomlist.filter(isNotUndefined).filter(hasHetflag).map(getAtomSerial);
+    return this.getAtoms(atomlist).filter(isNotUndefined).filter(hasHetflag).map(getAtomSerial);
 };
 
-GLmol.prototype.removeSolvents = function (atomlist) {
-    return atomlist.filter(isNotUndefined).filter(isNotSolvent).map(getAtomSerial);
-};
+//GLmol.prototype.removeSolvents = function (atomlist) {
+    //this.getAtoms(atomlist).filter(isNotUndefined).filter(isNotSolvent).map(getAtomSerial);
+//};
 
 GLmol.prototype.getProteins = function (atomlist) {
-    return atomlist.filter(isNotUndefined).filter(noHetflag).map(getAtomSerial);
+    this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag).map(getAtomSerial);
 };
 
 // TODO: Test
@@ -1607,7 +1616,7 @@ GLmol.prototype.getSidechains = function (atomlist) {
     function check(atom) {
         return !(atom.atom === 'C' || atom.atom === 'O' || (atom.atom === 'N' && atom.resn !== "PRO"));
     }
-    return atomlist.filter(isNotUndefined).filter(noHetflag).filter(check).getAtomSerial();
+    return atomlist.filter(isNotUndefined).filter(noHetflag).filter(check).map(getAtomSerial);
 };
 
 GLmol.prototype.getAtomsWithin = function (atomlist, extent) {
@@ -1735,20 +1744,10 @@ GLmol.prototype.getNonbonded = function (atomlist, chain) { // XXX chain argumen
 };
 
 GLmol.prototype.colorByAtom = function (atomlist, colors) {
-    var i,
-        atom,
-        c;
-    for (i in atomlist) {
-        if (atomlist.hasOwnProperty(i)) {
-            atom = this.atoms[atomlist[i]];
-            if (!atom) { continue; }
-
-            c = colors[atom.elem];
-            if (!c) { c = this.ElementColors[atom.elem]; }
-            if (!c) { c = this.defaultColor; }
-            atom.color = c;
-        }
-    }
+  var that = this;
+  this.getAtoms(atomlist).filter(isNotUndefined).forEach(function (atom) {
+    atom.color = that.ElementColors[atom.elem] || that.defaultColor || colors[atom.elem];
+  })
 };
 
 
@@ -2032,7 +2031,8 @@ GLmol.prototype.billboard = function (tex) {
 
 GLmol.prototype.defineRepresentation = function () {
     var all = this.getAllAtoms(),
-        hetatm = this.removeSolvents(this.getHetatms(all));
+        //hetatm = this.removeSolvents(this.getHetatms(all));
+        hetatm = this.getHetatms(all).filter(isNotSolvent);
 
     this.colorByAtom(all, {});
     this.colorByChain(all);
@@ -2144,7 +2144,7 @@ GLmol.prototype.loadMoleculeStr = function (repressZoom, source) {
     if (title) { title.innerHTML = titleStr; }// jQ's method is more thorough
 
     this.rebuildScene(true);
-    if (repressZoom === undefined || !repressZoom) { this.zoomInto(this.getAllAtoms()); }
+    if (!repressZoom) { this.zoomInto(this.getAllAtoms()); }
 
     this.show();
 };
@@ -2186,6 +2186,7 @@ GLmol.prototype.enableMouse = function () {
    // TODO: Better touch panel support.
    // Contribution is needed as I don't own any iOS or Android device with WebGL support.
     glDOM.bind('mousedown touchstart', function (ev) {
+        console.log("touchstart");
         ev.preventDefault();
         if (!me.scene) { return; }
         me.adjustPos(ev);
@@ -2215,17 +2216,41 @@ GLmol.prototype.enableMouse = function () {
     });
     glDOM.bind("contextmenu", function (ev) { ev.preventDefault(); });
     glDOM.bind('mouseup touchend', function (ev) {
-        var x = ev.x, y = ev.y, dx, dy, r, mvMat, pmvMat, pmvMatInv, nearest, i, atom, v, r2, tx, ty, ilim, bb;
+        console.log("touchend");
+        var x,
+            y,
+            dx,
+            dy,
+            r,
+            mvMat,
+            pmvMat,
+            pmvMatInv,
+            nearest,
+            i,
+            atom,
+            v,
+            r2,
+            tx,
+            ty,
+            ilim,
+            bb;
         me.isDragging = false;
 
         me.adjustPos(ev);
-        if (x) { return; }
+        x = ev.x;
+        y = ev.y;
+        if (!x) {
+          return;
+        }
         dx = x - me.mouseStartX;
         dy = y - me.mouseStartY;
         r = Math.sqrt(dx * dx + dy * dy);
-        if (r > 2) { return; }
+        //if (r > 2) {
+          //return;
+        //}
         x -= me.container.position().left;
         y -= me.container.position().top;
+
 
         mvMat = new THREE.Matrix4().multiply(me.camera.matrixWorldInverse, me.modelGroup.matrixWorld);
         pmvMat = new THREE.Matrix4().multiply(me.camera.projectionMatrix, mvMat);
@@ -2277,18 +2302,21 @@ GLmol.prototype.enableMouse = function () {
         me.adjustPos(ev);
         x = ev.x;
         y = ev.y;
-        if (x) { return; }
+        if (!x) { return; }
         dx = (x - me.mouseStartX) / me.WIDTH;
         dy = (y - me.mouseStartY) / me.HEIGHT;
         r = Math.sqrt(dx * dx + dy * dy);
         if (mode === 3 || (me.mouseButton === 3 && ev.ctrlKey)) { // Slab
+            console.log("slab")
             me.slabNear = me.cslabNear + dx * 100;
             me.slabFar = me.cslabFar + dy * 100;
         } else if (mode === 2 || me.mouseButton === 3 || ev.shiftKey) { // Zoom
+            console.log("zoom")
             scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
             if (scaleFactor < 80) { scaleFactor = 80; }
             me.rotationGroup.position.z = me.cz - dy * scaleFactor;
         } else if (mode === 1 || me.mouseButton === 2 || ev.ctrlKey) { // Translate
+            console.log("translate")
             scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
             if (scaleFactor < 20) { scaleFactor = 20; }
             translationByScreen = new TV3(-dx * scaleFactor, -dy * scaleFactor, 0);
@@ -2299,6 +2327,7 @@ GLmol.prototype.enableMouse = function () {
             me.modelGroup.position.y = me.currentModelPos.y + translation.y;
             me.modelGroup.position.z = me.currentModelPos.z + translation.z;
         } else if ((mode === 0 || me.mouseButton === 1) && r !== 0) { // Rotate
+            console.log("rotate")
             rs = Math.sin(r * Math.PI) / r;
             me.dq.x = Math.cos(r * Math.PI);
             me.dq.y = 0;

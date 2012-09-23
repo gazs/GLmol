@@ -174,7 +174,7 @@ addTab('#glmol01_srcbox', '400px', 0);
 addTab('#glmol01_viewbox', '400px', 1);
 addTab('#glmol01_infobox', '400px', 2);
 
-var glmol01 = new GLmol('#glmol01', true);
+var glmol01 = new GLmol('glmol01', true);
 var query = window.location.search.substring(1);
 if (query == '') download('pdb:2POR');
 else download(query);
@@ -251,19 +251,26 @@ $('#glmol01_reload').click(function(ev) {
 var t, m;
 
 function defineRepFromController() {
+  if (this.queryselector) {
+     var idHeader = this.queryselector + '_';
+  }
+  else {
    var idHeader = "#" + this.id + '_';
+  }
+  console.log(idHeader)
 
 var time = new Date();
    var all = this.getAllAtoms();
    if ($(idHeader + 'biomt').attr('checked') && this.protein.biomtChains != "") all = this.getChain(all, this.protein.biomtChains);
    var allHet = this.getHetatms(all);
-   //var hetatm = this.removeSolvents(allHet);
-   hetatm = this.getHetatms(all).filter(isNotSolvent);
+   var hetatm = this.removeSolvents(allHet);
+   console.log(allHet.length, hetatm.length)
 
 console.log("selection " + (+new Date() - time)); time = new Date();
 
    this.colorByAtom(all, {});  
    var colorMode = $(idHeader + 'color').val();
+   console.log("colorMode", colorMode)
    if (colorMode == 'ss') {
       this.colorByStructure(all, 0xcc00cc, 0x00cccc);
    } else if (colorMode == 'chain') {
@@ -280,6 +287,8 @@ console.log("color " + (+new Date() - time)); time = new Date();
    var asu = new THREE.Object3D();
    var mainchainMode = $(idHeader + 'mainchain').val();
    var doNotSmoothen = ($(idHeader + 'doNotSmoothen').attr('checked') == 'checked');
+   console.log("mainChainMode", mainchainMode)
+   console.log("doNotSmoothen", doNotSmoothen)
    if ($(idHeader + 'showMainchain').attr('checked')) {
       if (mainchainMode == 'ribbon') {
          this.drawCartoon(asu, all, doNotSmoothen);
@@ -311,6 +320,7 @@ console.log("mainchain " + (+new Date() - time)); time = new Date();
 
    if ($(idHeader + 'showBases').attr('checked')) {
       var hetatmMode = $(idHeader + 'base').val();
+      console.log("hetatmMode", hetatmMode)
       if (hetatmMode == 'nuclStick') {
          this.drawNucleicAcidStick(this.modelGroup, all);
       } else if (hetatmMode == 'nuclLine') {
@@ -324,6 +334,7 @@ console.log("mainchain " + (+new Date() - time)); time = new Date();
    if ($(idHeader + 'showNonBonded').attr('checked')) {
       var nonBonded = this.getNonbonded(allHet);
       var nbMode = $(idHeader + 'nb').val();
+      console.log("nbMode", nbMode)
       if (nbMode == 'nb_sphere') {
          this.drawAtomsAsIcosahedron(target, nonBonded, 0.3, true);
       } else if (nbMode == 'nb_cross') {
@@ -334,6 +345,7 @@ console.log("mainchain " + (+new Date() - time)); time = new Date();
 
    if ($(idHeader + 'showHetatms').attr('checked')) {
       var hetatmMode = $(idHeader + 'hetatm').val();
+      console.log(hetatm.length);
       if (hetatmMode == 'stick') {
          this.drawBondsAsStick(target, hetatm, this.cylinderRadius, this.cylinderRadius, true);
       } else if (hetatmMode == 'sphere') {
@@ -352,6 +364,7 @@ console.log("mainchain " + (+new Date() - time)); time = new Date();
 console.log("hetatms " + (+new Date() - time)); time = new Date();
 
    var projectionMode = $(idHeader + 'projection').val();
+   console.log("projectionMode", projectionMode)
    if (projectionMode == 'perspective') this.camera = this.perspectiveCamera;
    else if (projectionMode == 'orthoscopic') this.camera = this.orthoscopicCamera;
   

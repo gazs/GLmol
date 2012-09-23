@@ -20,6 +20,8 @@
 
 /* TODO: simply use modernizr? */
 
+(function (window, undefined) {
+
 var hasCanvas = (function () {
     var canvas  = document.createElement('canvas');
     return !!(canvas.getContext && canvas.getContext('2d'));
@@ -486,6 +488,7 @@ GLmol.prototype.subdivide = function (_points, DIV) { // points as Vector3
 };
 
 GLmol.prototype.drawAtomsAsSphere = function (group, atomlist, defaultRadius, forceDefault, scale) {
+  console.log(atomlist.length);
     var sphereGeometry = new THREE.SphereGeometry(1, this.sphereQuality, this.sphereQuality), // r, seg, ring
         i,
         atom,
@@ -619,7 +622,7 @@ GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, igno
         }
         if (atom1.connected) { forSpheres.push(i); }
     }
-//    this.drawAtomsAsSphere(group, forSpheres, atomR, !scale, scale);
+   this.drawAtomsAsSphere(group, forSpheres, atomR, !scale, scale);
 };
 
 GLmol.prototype.defineCell = function () {
@@ -1561,6 +1564,7 @@ GLmol.prototype.drawDottedLines = function (group, points, color) {
 };
 
 
+
 /* helper functions, generalize them! */
 function isNotUndefined(atom) {
     return !!atom;
@@ -1573,9 +1577,11 @@ function noHetflag(atom) {
     return hasHetflag(atom) === false;
 }
 
-function isNotSolvent(atom) {
+GLmol.isNotSolvent = function (atom) {
     return atom.resn !== 'HOH';
 }
+
+var isNotSolvent = GLmol.isNotSolvent;
 
 function getAtomSerial(atom) {
     return atom.serial;
@@ -1598,25 +1604,26 @@ GLmol.prototype.getHetatms = function (atomlist) {
     return this.getAtoms(atomlist).filter(isNotUndefined).filter(hasHetflag).map(getAtomSerial);
 };
 
-//GLmol.prototype.removeSolvents = function (atomlist) {
-    //this.getAtoms(atomlist).filter(isNotUndefined).filter(isNotSolvent).map(getAtomSerial);
-//};
+GLmol.prototype.removeSolvents = function (atomlist) {
+    return this.getAtoms(atomlist).filter(isNotUndefined).filter(isNotSolvent).map(getAtomSerial);
+};
 
 GLmol.prototype.getProteins = function (atomlist) {
-    this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag).map(getAtomSerial);
+    return this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag).map(getAtomSerial);
 };
 
 // TODO: Test
 GLmol.prototype.excludeAtoms = function (atomlist, deleteList) {
-    return atomlist.filter(function (atom) { return (deleteList.indexOf(atom) === -1); });
+    return this.getAtoms(atomlist).filter(function (atom) { return (deleteList.indexOf(atom) === -1); });
 };
+
 
 GLmol.prototype.getSidechains = function (atomlist) {
     //TODO: what is this called?
     function check(atom) {
         return !(atom.atom === 'C' || atom.atom === 'O' || (atom.atom === 'N' && atom.resn !== "PRO"));
     }
-    return atomlist.filter(isNotUndefined).filter(noHetflag).filter(check).map(getAtomSerial);
+    return this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag).filter(check).map(getAtomSerial);
 };
 
 GLmol.prototype.getAtomsWithin = function (atomlist, extent) {
@@ -1731,7 +1738,7 @@ GLmol.prototype.getChain = function (atomlist, chain) {
 
 // for HETATM only
 GLmol.prototype.getNonbonded = function (atomlist, chain) { // XXX chain argument unused!!
-    return atomlist.filter(isNotUndefined).filter(hasHetflag).filter(
+    return this.getAtoms(atomlist).filter(isNotUndefined).filter(hasHetflag).filter(
         function (atom) { return atom.bonds.length === 0; }
     ).map(getAtomSerial);
 
@@ -1832,7 +1839,7 @@ GLmol.prototype.colorByChain = function (atomlist, colorSidechains) {
 };
 
 GLmol.prototype.colorByResidue = function (atomlist, residueColors) {
-    atomlist.filter(isNotUndefined).forEach(
+    this.getAtoms(atomlist).filter(isNotUndefined).forEach(
         function (atom) {
             var c = residueColors[atom.resn];
             if (c) {
@@ -1843,7 +1850,7 @@ GLmol.prototype.colorByResidue = function (atomlist, residueColors) {
 };
 
 GLmol.prototype.colorAtoms = function (atomlist, c) {
-    atomlist.filter(isNotUndefined).forEach(
+    this.getAtoms(atomlist).filter(isNotUndefined).forEach(
         function (atom) {
             atom.color = c;
         }
@@ -2122,7 +2129,8 @@ GLmol.prototype.rebuildScene = function () {
 };
 
 GLmol.prototype.loadMolecule = function (repressZoom) {
-    var source = document.querySelector(this.queryselector + '_src').innerHTML;
+    //var source = document.querySelector(this.queryselector + '_src').innerHTML;
+    var source = $(this.queryselector + '_src').val();
     this.loadMoleculeStr(repressZoom, source);
 };
 
@@ -2349,3 +2357,8 @@ GLmol.prototype.show = function () {
 GLmol.prototype.doFunc = function (func) {
     func(this);
 };
+
+// Expose GLmol to the global object
+window.GLmol = GLmol;
+
+})(window);

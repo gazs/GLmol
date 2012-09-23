@@ -34,9 +34,9 @@
         return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
     }());
 
-    // Workaround for Intel GMA series (gl_FrontFacing causes compilation error)
-    THREE.ShaderLib.lambert.fragmentShader = THREE.ShaderLib.lambert.fragmentShader.replace("gl_FrontFacing", "true");
-    THREE.ShaderLib.lambert.vertexShader = THREE.ShaderLib.lambert.vertexShader.replace(/\}$/, "#ifdef DOUBLE_SIDED\n if (transformedNormal.z < 0.0) vLightFront = vLightBack;\n #endif\n }");
+    //// Workaround for Intel GMA series (gl_FrontFacing causes compilation error)
+    //THREE.ShaderLib.lambert.fragmentShader = THREE.ShaderLib.lambert.fragmentShader.replace("gl_FrontFacing", "true");
+    //THREE.ShaderLib.lambert.vertexShader = THREE.ShaderLib.lambert.vertexShader.replace(/\}$/, "#ifdef DOUBLE_SIDED\n if (transformedNormal.z < 0.0) vLightFront = vLightBack;\n #endif\n }");
 
     TV3 = THREE.Vector3;
     TF3 = THREE.Face3;
@@ -940,8 +940,8 @@
         geo.computeVertexNormals(false);
         mat = new THREE.MeshLambertMaterial();
         mat.vertexColors = THREE.FaceColors;
+        mat.side = THREE.DoubleSide;
         mesh = new THREE.Mesh(geo, mat);
-        mesh.doubleSided = true;
         group.add(mesh);
     };
 
@@ -1037,7 +1037,7 @@
             color,
             f,
             vsize,
-            material,
+            mat,
             mesh;
 
         for (i = 0, lim = p1.length; i < lim; i++) {
@@ -1073,10 +1073,10 @@
         fs.push(new THREE.Face4(vsize + 1, vsize + 5, vsize + 7, vsize + 3, undefined, fs[fs.length - 3].color));
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
-        material =  new THREE.MeshLambertMaterial();
-        material.vertexColors = THREE.FaceColors;
-        mesh = new THREE.Mesh(geo, material);
-        mesh.doubleSided = true;
+        mat =  new THREE.MeshLambertMaterial();
+        mat.vertexColors = THREE.FaceColors;
+        mat.side = THREE.DoubleSide;
+        mesh = new THREE.Mesh(geo, mat);
         group.add(mesh);
     };
 
@@ -1086,7 +1086,7 @@
             i,
             lim,
             f,
-            material,
+            mat,
             mesh;
 
         for (i = 0, lim = p1.length; i < lim; i++) {
@@ -1100,10 +1100,10 @@
         }
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
-        material =  new THREE.MeshLambertMaterial();
-        material.vertexColors = THREE.FaceColors;
+        mat =  new THREE.MeshLambertMaterial();
+        mat.vertexColors = THREE.FaceColors;
+        mat.side = THREE.DoubleSide;
         mesh = new THREE.Mesh(geo, material);
-        mesh.doubleSided = true;
         group.add(mesh);
     };
 
@@ -1335,8 +1335,8 @@
         geo.computeFaceNormals();
         mat = new THREE.MeshLambertMaterial();
         mat.vertexColors = THREE.VertexColors;
+        mat.side = THREE.DoubleSide;
         mesh = new THREE.Mesh(geo, mat);
-        mesh.doubleSided = true;
         group.add(mesh);
     };
 

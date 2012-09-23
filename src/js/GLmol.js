@@ -1103,7 +1103,7 @@
         mat =  new THREE.MeshLambertMaterial();
         mat.vertexColors = THREE.FaceColors;
         mat.side = THREE.DoubleSide;
-        mesh = new THREE.Mesh(geo, material);
+        mesh = new THREE.Mesh(geo, mat);
         group.add(mesh);
     };
 

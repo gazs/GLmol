@@ -38,7 +38,7 @@ THREE.ShaderLib.lambert.vertexShader = THREE.ShaderLib.lambert.vertexShader.repl
 var TV3 = THREE.Vector3, TF3 = THREE.Face3, TCo = THREE.Color;
 
 THREE.Geometry.prototype.colorAll = function (color) {
-  this.faces.forEach(function (face) { face.color = color })
+    this.faces.forEach(function (face) { face.color = color; });
 };
 
 THREE.Matrix4.prototype.isIdentity = function () {
@@ -387,7 +387,7 @@ GLmol.prototype.parsePDB2 = function (str) {
         } else if (recordName === 'HEADER') {
             protein.pdbID = line.substr(62, 4);
         } else if (recordName === 'TITLE ') {
-            if (!protein.title ) {
+            if (!protein.title) {
                 protein.title = "";
             } else {
                 protein.title += line.substr(10, 70) + "\n"; // CHECK: why 60 is not enough???
@@ -601,7 +601,7 @@ GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, igno
             j = atomlist[_j];
             atom2 = this.atoms[j];
             if (!atom2) {
-              continue;
+                continue;
             }
             order = this.isConnected(atom1, atom2);
             if (order === 0) { continue; }
@@ -619,7 +619,7 @@ GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, igno
         }
         if (atom1.connected) { forSpheres.push(i); }
     }
-    this.drawAtomsAsSphere(group, forSpheres, atomR, !scale, scale);
+//    this.drawAtomsAsSphere(group, forSpheres, atomR, !scale, scale);
 };
 
 GLmol.prototype.defineCell = function () {
@@ -1108,13 +1108,14 @@ GLmol.prototype.IcosahedronGeometry = function () {
     return this.icosahedron;
 };
 
+
 GLmol.prototype.drawCylinder = function (group, from, to, radius, color, cap) {
     if (!from || !to) { return; }
 
     color = new TCo(color);
     var midpoint = new TV3().add(from, to).multiplyScalar(0.5),
-        cylinderMaterial = new THREE.MeshLambertMaterial({color: color.getHex()}),
-        cylinder = new THREE.Mesh(this.cylinderGeometry, cylinderMaterial),
+        cylinderMaterial,
+        cylinder,
         m;
 
     if (!this.cylinderGeometry) {
@@ -1122,6 +1123,8 @@ GLmol.prototype.drawCylinder = function (group, from, to, radius, color, cap) {
         this.cylinderGeometry.faceUvs = [];
         this.faceVertexUvs = [];
     }
+    cylinderMaterial = new THREE.MeshLambertMaterial({color: color.getHex()});
+    cylinder = new THREE.Mesh(this.cylinderGeometry, cylinderMaterial);
     cylinder.position = midpoint;
     cylinder.lookAt(from);
     cylinder.updateMatrix();
@@ -1165,7 +1168,7 @@ GLmol.prototype.drawHelixAsCylinder = function (group, atomlist, radius) {
 };
 
 GLmol.prototype.drawCartoon = function (group, atomlist, doNotSmoothen, thickness) {
-  this.drawStrand(group, atomlist, 2, undefined, true, undefined, undefined, doNotSmoothen, thickness);
+    this.drawStrand(group, atomlist, 2, undefined, true, undefined, undefined, doNotSmoothen, thickness);
 };
 
 GLmol.prototype.drawStrand = function (group, atomlist, num, div, fill, coilWidth, helixSheetWidth, doNotSmoothen, thickness) {
@@ -1258,7 +1261,7 @@ GLmol.prototype.drawNucleicAcidLadderSub = function (geo, lineGeo, atoms, color)
 
     function isNotUndefined(atom) {
       // assumption: glmol actually wants truthyness
-        return !!atom
+        return !!atom;
     }
 
     if ([atoms[0], atoms[1], atoms[2], atoms[3], atoms[4], atoms[5]].every(isNotUndefined)) {
@@ -1585,14 +1588,11 @@ GLmol.prototype.getAllAtoms = function () {
 };
 
 GLmol.prototype.getAtoms = function (atomlist) {
-  return this.atoms.filter(
-    function(atom,index){
-      if (atomlist.indexOf(index) != -1) {
-        return true;
-      }
-    }
-  );
-}
+    return this.atoms.filter(function (atom, index) {
+        if (atomlist.indexOf(index) !== -1) { return true; }
+    });
+};
+
 
 GLmol.prototype.getHetatms = function (atomlist) {
     return this.getAtoms(atomlist).filter(isNotUndefined).filter(hasHetflag).map(getAtomSerial);
@@ -1744,10 +1744,10 @@ GLmol.prototype.getNonbonded = function (atomlist, chain) { // XXX chain argumen
 };
 
 GLmol.prototype.colorByAtom = function (atomlist, colors) {
-  var that = this;
-  this.getAtoms(atomlist).filter(isNotUndefined).forEach(function (atom) {
-    atom.color = that.ElementColors[atom.elem] || that.defaultColor || colors[atom.elem];
-  })
+    var that = this;
+    this.getAtoms(atomlist).filter(isNotUndefined).forEach(function (atom) {
+        atom.color = that.ElementColors[atom.elem] || that.defaultColor || colors[atom.elem];
+    });
 };
 
 
@@ -1922,7 +1922,7 @@ GLmol.prototype.drawSymmetryMates2 = function (group, asu, matrices) {
     for (i = 0; i < matrices.length; i++) {
         mat = matrices[i];
         if (mat === undefined || mat.isIdentity()) { continue; }
-        console.log(mat);
+        //console.log(mat);
         symmetryMate = THREE.SceneUtils.cloneObject(asu);
         symmetryMate.matrix = mat;
         group.add(symmetryMate);
@@ -2186,7 +2186,6 @@ GLmol.prototype.enableMouse = function () {
    // TODO: Better touch panel support.
    // Contribution is needed as I don't own any iOS or Android device with WebGL support.
     glDOM.bind('mousedown touchstart', function (ev) {
-        console.log("touchstart");
         ev.preventDefault();
         if (!me.scene) { return; }
         me.adjustPos(ev);
@@ -2216,7 +2215,6 @@ GLmol.prototype.enableMouse = function () {
     });
     glDOM.bind("contextmenu", function (ev) { ev.preventDefault(); });
     glDOM.bind('mouseup touchend', function (ev) {
-        console.log("touchend");
         var x,
             y,
             dx,
@@ -2240,7 +2238,7 @@ GLmol.prototype.enableMouse = function () {
         x = ev.x;
         y = ev.y;
         if (!x) {
-          return;
+            return;
         }
         dx = x - me.mouseStartX;
         dy = y - me.mouseStartY;
@@ -2307,16 +2305,13 @@ GLmol.prototype.enableMouse = function () {
         dy = (y - me.mouseStartY) / me.HEIGHT;
         r = Math.sqrt(dx * dx + dy * dy);
         if (mode === 3 || (me.mouseButton === 3 && ev.ctrlKey)) { // Slab
-            console.log("slab")
             me.slabNear = me.cslabNear + dx * 100;
             me.slabFar = me.cslabFar + dy * 100;
         } else if (mode === 2 || me.mouseButton === 3 || ev.shiftKey) { // Zoom
-            console.log("zoom")
             scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
             if (scaleFactor < 80) { scaleFactor = 80; }
             me.rotationGroup.position.z = me.cz - dy * scaleFactor;
         } else if (mode === 1 || me.mouseButton === 2 || ev.ctrlKey) { // Translate
-            console.log("translate")
             scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
             if (scaleFactor < 20) { scaleFactor = 20; }
             translationByScreen = new TV3(-dx * scaleFactor, -dy * scaleFactor, 0);
@@ -2327,7 +2322,6 @@ GLmol.prototype.enableMouse = function () {
             me.modelGroup.position.y = me.currentModelPos.y + translation.y;
             me.modelGroup.position.z = me.currentModelPos.z + translation.z;
         } else if ((mode === 0 || me.mouseButton === 1) && r !== 0) { // Rotate
-            console.log("rotate")
             rs = Math.sin(r * Math.PI) / r;
             me.dq.x = Math.cos(r * Math.PI);
             me.dq.y = 0;

@@ -2030,20 +2030,22 @@
 
     GLmol.prototype.billboard = function (tex) {
         var geo = this.getBillboardMesh(),
-        sm = new THREE.ShaderMaterial({uniforms: {
-            map: {
-                  type: 't', texture: tex
-            },
-            width: {
-                  type: 'f',
-                  value: tex.image.width
-            },
-            height: {
-                type: 'f',
-                value: tex.image.height
-            }
-        }
-        });
+            sm = new THREE.ShaderMaterial({
+                uniforms: {
+                    map: {
+                        type: 't',
+                        texture: tex
+                    },
+                    width: {
+                        type: 'f',
+                        value: tex.image.width
+                    },
+                    height: {
+                        type: 'f',
+                        value: tex.image.height
+                    }
+                }
+            });
         sm.vertexShader = this.vs_billboard;
         sm.fragmentShader = this.fs_billboard;
         return new THREE.Mesh(geo, sm);

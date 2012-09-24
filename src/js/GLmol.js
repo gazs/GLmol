@@ -1992,7 +1992,7 @@
         ctx.strokeStyle = ctx.fillStyle;
         ctx.font = size + "px Arial";
         ctx.fillText(text, 0, size * 0.9);
-        this.renderer.domElement.parentElement.appendChild(canvas);
+        // this.renderer.domElement.parentElement.appendChild(canvas);
 
         tex = new THREE.Texture(canvas);
         tex.needsUpdate = true;
@@ -2030,9 +2030,20 @@
 
     GLmol.prototype.billboard = function (tex) {
         var geo = this.getBillboardMesh(),
-            sm = new THREE.ShaderMaterial({uniforms:
-                    {map: {type: 't', texture: tex},
-                    width: {type: 'f', value: tex.image.width}, height: {type: 'f', value: tex.image.height}}});
+        sm = new THREE.ShaderMaterial({uniforms: {
+            map: {
+                  type: 't', texture: tex
+            },
+            width: {
+                  type: 'f',
+                  value: tex.image.width
+            },
+            height: {
+                type: 'f',
+                value: tex.image.height
+            }
+        }
+        });
         sm.vertexShader = this.vs_billboard;
         sm.fragmentShader = this.fs_billboard;
         return new THREE.Mesh(geo, sm);
@@ -2282,6 +2293,7 @@
             atom = nearest[1];
             if (!atom) { return; }
             bb = me.billboard(me.createTextTex(atom.chain + ":" + atom.resn + ":" + atom.resi, "30", "#ffffff"));
+            console.log(bb);
             bb.position.set(atom.x, atom.y, atom.z);
             me.modelGroup.add(bb);
             me.show();

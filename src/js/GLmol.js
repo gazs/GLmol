@@ -543,20 +543,20 @@
             distSquared;
         if (s !== -1) { return atom1.bondOrder[s]; }
 
-        if (this.protein.smallMolecule && (atom1.hetflag || atom2.hetflag)) { return 0; } // CHECK: or should I ?
+        if (this.protein.smallMolecule && (atom1.hetflag || atom2.hetflag)) { return false; } // CHECK: or should I ?
 
         distSquared = (atom1.x - atom2.x) * (atom1.x - atom2.x) +
                       (atom1.y - atom2.y) * (atom1.y - atom2.y) +
                       (atom1.z - atom2.z) * (atom1.z - atom2.z);
 
     //   if (atom1.altLoc != atom2.altLoc) return false;
-        if (isNaN(distSquared)) { return 0; }
-        if (distSquared < 0.5) { return 0; } // maybe duplicate position.
+        if (isNaN(distSquared)) { return false; }
+        if (distSquared < 0.5) { return false; } // maybe duplicate position.
 
-        if (distSquared > 1.3 && (atom1.elem === 'H' || atom2.elem === 'H' || atom1.elem === 'D' || atom2.elem === 'D')) { return 0; }
-        if (distSquared < 3.42 && (atom1.elem === 'S' || atom2.elem === 'S')) { return 1; }
-        if (distSquared > 2.78) { return 0; }
-        return 1;
+        if (distSquared > 1.3 && (atom1.elem === 'H' || atom2.elem === 'H' || atom1.elem === 'D' || atom2.elem === 'D')) { return false; }
+        if (distSquared < 3.42 && (atom1.elem === 'S' || atom2.elem === 'S')) { return false; }
+        if (distSquared > 2.78) { return false; }
+        return true;
     };
 
     GLmol.prototype.drawBondAsStickSub = function (group, atom1, atom2, bondR, order) {
@@ -938,6 +938,7 @@
         }
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
+
         mat = new THREE.MeshLambertMaterial();
         mat.vertexColors = THREE.FaceColors;
         mat.side = THREE.DoubleSide;
@@ -1071,6 +1072,7 @@
         vsize += 8;
         fs.push(new THREE.Face4(vsize, vsize + 2, vsize + 6, vsize + 4, undefined, fs[0].color));
         fs.push(new THREE.Face4(vsize + 1, vsize + 5, vsize + 7, vsize + 3, undefined, fs[fs.length - 3].color));
+
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
         mat =  new THREE.MeshLambertMaterial();
@@ -1098,6 +1100,7 @@
             f.color = new TCo(colors[Math.round((i - 1) / div)]);
             geo.faces.push(f);
         }
+
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
         mat =  new THREE.MeshLambertMaterial();
@@ -1332,6 +1335,7 @@
             }
         }
         this.drawNucleicAcidLadderSub(geo, lineGeo, currentComponent, color);
+
         geo.computeFaceNormals();
         mat = new THREE.MeshLambertMaterial();
         mat.vertexColors = THREE.VertexColors;
@@ -1426,6 +1430,7 @@
             geo.vertices.push(new TV3(end.x, end.y, end.z));
             geo.colors.push(new TCo(start.color));
         }
+
         mat =  new THREE.LineBasicMaterial({linewidth: 1, linejoin: false});
         mat.linewidth = 1.5;
         mat.vertexColors = true;

@@ -127,7 +127,7 @@ ProteinSurface.prototype.getModel = function (atoms, atomlist) {
         vertices[i].x = vertices[i].x / scaleFactor - ptranx;
         vertices[i].y = vertices[i].y / scaleFactor - ptrany;
         vertices[i].z = vertices[i].z / scaleFactor - ptranz;
-        v.push(new THREE.Vertex(vertices[i]));
+        v.push(vertices[i]);
     }
 
     geo.vertices = v;

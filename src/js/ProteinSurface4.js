@@ -26,6 +26,11 @@ TODO: Improved performance on Firefox
 */
 
 // type 1: VDW 3: SAS 4: MS 2: SES
+//
+//
+var GLmol = GLmol || {};
+
+
 GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wireframeLinewidth) {
     wireframe = wireframe || false;
     var atomsToShow, extent, expandedExtent, extendedAtoms, ps, mat, mesh;
@@ -38,21 +43,9 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
         extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.getAllAtoms(), expandedExtent));
         this.meshType = type;
 
-        ps = new ProteinSurface();
-        ps.initparm(expandedExtent, (type === 1) ? false : true);
-        ps.fillvoxels(this.atoms, extendedAtoms);
-        ps.buildboundary();
-        if (type === 4 || type === 2) {
-            ps.fastdistancemap();
-        }
-        if (type === 2) {
-            ps.boundingatom(false);
-            ps.fillvoxelswaals(this.atoms, extendedAtoms);
-        }
-        ps.marchingcube(type);
-        ps.laplaciansmooth(1);
+        ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+        window.ps = ps;
         this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
-        ps = []; // why?
     }
     //TODO: same boilerplate
     mat = new THREE.MeshLambertMaterial();
@@ -67,8 +60,28 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
 };
 
 
-function ProteinSurface() {
-}
+this.addEventListener('message', function(e) {
+    self.postMessage(e.data);
+
+});
+
+function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
+    this.initparm(expandedExtent, (type === ProteinSurface.VDW) ? false : true);
+    this.fillvoxels(atoms, extendedAtoms);
+    this.buildboundary();
+    if (type === ProteinSurface.MS || type === ProteinSurface.SES) {
+        this.fastdistancemap();
+    }
+    if (type === ProteinSurface.SES) {
+        this.boundingatom(false);
+        this.fillvoxelswaals(atoms, extendedAtoms);
+    }
+    this.marchingcube(type);
+    this.laplaciansmooth(1);
+};
+
+ProteinSurface.prototype.inarray = [];
+ProteinSurface.prototype.outarray = [];
 ProteinSurface.prototype.ptranx = undefined;
 ProteinSurface.prototype.ptrany = undefined;
 ProteinSurface.prototype.ptranz = undefined;
@@ -91,8 +104,8 @@ ProteinSurface.prototype.pmaxz = undefined;
 ProteinSurface.prototype.rasrad = [1.90, 1.88, 1.63, 1.48, 1.78, 1.2, 1.87, 1.96, 1.63, 0.74, 1.8, 1.48, 1.2]; //liang
 //             Calpha   c    n    o    s   h   p   Cbeta  ne  fe  other ox  hx
 
-ProteinSurface.prototype.depty = new Array(13);
-ProteinSurface.prototype.widxz = new Array(13);
+ProteinSurface.prototype.depty = [] // new Array(13);
+ProteinSurface.prototype.widxz = new Int32Array(13);
 ProteinSurface.prototype.fixsf = 2;
 ProteinSurface.prototype.faces = undefined;
 ProteinSurface.prototype.verts = undefined;
@@ -729,8 +742,6 @@ ProteinSurface.prototype.fastdistancemap = function () {
         b,
         k,
         vpIJK,
-        inarray = [],
-        outarray = [],
         vptmp,
         cutRadis = this.cutRadis,
         scaleFactor = this.scaleFactor,
@@ -777,7 +788,7 @@ ProteinSurface.prototype.fastdistancemap = function () {
             for (k = 0; k < pHeight; k++) {
                 vpIJK = vp[i * pWidth * pHeight + j * pHeight + k];
                 if (vpIJK.isbound) {
-                    inarray.push({ix: i, iy: j, iz: k});
+                    this.inarray.push({ix: i, iy: j, iz: k});
                     positin++;
                     vpIJK.isbound = false;
                 }
@@ -788,12 +799,12 @@ ProteinSurface.prototype.fastdistancemap = function () {
     do {
         positout = this.fastoneshell(positin, boundPoint);
         positin = 0;
-        inarray = [];
+        this.inarray = [];
         for (i = 0; i < positout; i++) {
-            vptmp = vp[pWidth * pHeight * outarray[i].ix + pHeight * outarray[i].iy + outarray[i].iz];
+            vptmp = vp[pWidth * pHeight * this.outarray[i].ix + pHeight * this.outarray[i].iy + this.outarray[i].iz];
             vptmp.isbound = false;
             if (vptmp.distance <= 1.02 * cutRadis) {
-                inarray.push({ix: outarray[i].ix, iy: outarray[i].iy, iz: outarray[i].iz});
+                this.inarray.push({ix: outarray[i].ix, iy: outarray[i].iy, iz: outarray[i].iz});
                 //            inarray[positin].ix=outarray[i].ix;
                 //            inarray[positin].iy=outarray[i].iy;
                 //            inarray[positin].iz=outarray[i].iz;
@@ -822,8 +833,8 @@ ProteinSurface.prototype.fastdistancemap = function () {
             }
         }
     }
-    inarray = [];
-    outarray = [];
+    this.inarray = [];
+    this.outarray = [];
 };
 
 ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* innum,int *allocout,voxel2 ***boundPoint, int* outnum, int *elimi)
@@ -835,8 +846,6 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
         dy,
         dz,
         square,
-        inarray = [], // this is'nt declared WHY?
-        outarray = [],
         tnv = {ix: -1, iy: -1, iz: -1},
         i,
         j,
@@ -852,9 +861,9 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
     }
 
     for (i = 0; i < number; i++) {
-        tx = inarray[i].ix;
-        ty = inarray[i].iy;
-        tz = inarray[i].iz;
+        tx = this.inarray[i].ix;
+        ty = this.inarray[i].iy;
+        tz = this.inarray[i].iz;
 
         for (j = 0; j < 6; j++) {
             tnv.ix = tx + nb[j][0];
@@ -875,7 +884,7 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
                 vpTNV.distance = Math.sqrt(square);
                 vpTNV.isdone = true;
                 vpTNV.isbound = true;
-                outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
+                this.outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
                 positout++;
             } else if (tnv.ix < pLength && tnv.ix > -1 &&
                     tnv.iy < pWidth && tnv.iy > -1 &&
@@ -893,7 +902,7 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
                     vpTNV.distance = square;
                     if (!vpTNV.isbound) {
                         vpTNV.isbound = true;
-                        outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
+                        this.outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
                         positout++;
                     }
                 }
@@ -904,9 +913,9 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
     console.log("part1", positout);
 
     for (i = 0; i < number; i++) {
-        tx = inarray[i].ix;
-        ty = inarray[i].iy;
-        tz = inarray[i].iz;
+        tx = this.inarray[i].ix;
+        ty = this.inarray[i].iy;
+        tz = this.inarray[i].iz;
         for (j = 6; j < 18; j++) {
             tnv.ix = tx + nb[j][0];
             tnv.iy = ty + nb[j][1];
@@ -927,7 +936,7 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
                 vpTNV.distance = Math.sqrt(square);
                 vpTNV.isdone = true;
                 vpTNV.isbound = true;
-                outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
+                this.outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
                 positout++;
             } else if (tnv.ix < pLength && tnv.ix > -1 &&
                         tnv.iy < pWidth && tnv.iy > -1 &&
@@ -944,7 +953,7 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
                     vpTNV.distance = square;
                     if (!vpTNV.isbound) {
                         vpTNV.isbound = true;
-                        outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
+                        this.outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
                         positout++;
                     }
                 }
@@ -955,9 +964,9 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
     console.log("part2", positout);
 
     for (i = 0; i < number; i++) {
-        tx = inarray[i].ix;
-        ty = inarray[i].iy;
-        tz = inarray[i].iz;
+        tx = this.inarray[i].ix;
+        ty = this.inarray[i].iy;
+        tz = this.inarray[i].iz;
         for (j = 18; j < 26; j++) {
             tnv.ix = tx + nb[j][0];
             tnv.iy = ty + nb[j][1];
@@ -978,7 +987,7 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
                 vpTNV.distance = Math.sqrt(square);
                 vpTNV.isdone = true;
                 vpTNV.isbound = true;
-                outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
+                this.outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
                 positout++;
             } else if (tnv.ix < pLength && tnv.ix > -1 &&
                        tnv.iy < pWidth && tnv.iy > -1 &&
@@ -995,7 +1004,7 @@ ProteinSurface.prototype.fastoneshell = function (number, boundPoint) { //(int* 
                     vpTNV.distance = square;
                     if (!vpTNV.isbound) {
                         vpTNV.isbound = true;
-                        outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
+                        this.outarray.push({ix: tnv.ix, iy: tnv.iy, iz: tnv.iz});
                         positout++;
                     }
                 }

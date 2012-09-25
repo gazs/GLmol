@@ -2208,7 +2208,7 @@
 
        // TODO: Better touch panel support.
        // Contribution is needed as I don't own any iOS or Android device with WebGL support.
-        glDOM.bind('mousedown touchstart', function (ev) {
+        glDOM.on('mousedown touchstart', function (ev) {
             ev.preventDefault();
             if (!me.scene) { return; }
             me.adjustPos(ev);
@@ -2224,7 +2224,7 @@
             me.cslabFar = me.slabFar;
         });
 
-        glDOM.bind('DOMMouseScroll mousewheel', function (ev) { // Zoom
+        glDOM.on('DOMMouseScroll mousewheel', function (ev) { // Zoom
             ev.preventDefault();
             if (!me.scene) { return; }
             var scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
@@ -2236,8 +2236,8 @@
             console.log(ev.originalEvent.wheelDelta, ev.originalEvent.detail, me.rotationGroup.position.z);
             me.show();
         });
-        glDOM.bind("contextmenu", function (ev) { ev.preventDefault(); });
-        glDOM.bind('mouseup touchend', function (ev) {
+        glDOM.on("contextmenu", function (ev) { ev.preventDefault(); });
+        $("body").on('mouseup touchend', function (ev) {
             var x,
                 y,
                 dx,
@@ -2301,7 +2301,7 @@
             me.show();
         });
 
-        glDOM.bind('mousemove touchmove', function (ev) { // touchmove
+        glDOM.on('mousemove touchmove', function (ev) { // touchmove
             var mode = 0,
                 modeRadio = document.querySelectorAll('input[name=' + me.id + '_mouseMode]:checked'),
                 dx,

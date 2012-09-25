@@ -32,20 +32,16 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
     wireframeLinewidth = wireframeLinewidth || 1;
     if (!this.surfaceGeo || this.meshType !== type) {
         atomsToShow = this.removeSolvents(atomlist);
-        // console.log(atomsToShow);
         extent = this.getExtent(atomsToShow);
         expandedExtent = [[extent[0][0] - 4, extent[0][1] - 4, extent[0][2] - 4],
                           [extent[1][0] + 4, extent[1][1] + 4, extent[1][2] + 4]];
         extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.getAllAtoms(), expandedExtent));
-        // console.log(extendedAtoms);
         this.meshType = type;
 
         ps = new ProteinSurface();
         ps.initparm(expandedExtent, (type === 1) ? false : true);
         ps.fillvoxels(this.atoms, extendedAtoms);
-        console.log("fillvoxels done");
         ps.buildboundary();
-        console.log("buildboundary done");
         if (type === 4 || type === 2) {
             ps.fastdistancemap();
         }
@@ -72,38 +68,38 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
 
 
 function ProteinSurface() {
-    this.ptranx = undefined;
-    this.ptrany = undefined;
-    this.ptranz = undefined;
-    this.boxLength = 128;
-    this.probeRadius = 1.4;
-    this.scaleFactor = 1;
-    this.pHeight = undefined;
-    this.pWidth = undefined;
-    this.pLength = undefined;
-    this.cutRadius = undefined;
-    this.vp = undefined;
-    this.vertnumber = undefined;
-    this.facenumber = undefined;
-    this.pminx = undefined;
-    this.pminy = undefined;
-    this.pminz = undefined;
-    this.pmaxx = undefined;
-    this.pmaxy = undefined;
-    this.pmaxz = undefined;
-    this.rasrad = [1.90, 1.88, 1.63, 1.48, 1.78, 1.2, 1.87, 1.96, 1.63, 0.74, 1.8, 1.48, 1.2]; //liang
-    //             Calpha   c    n    o    s   h   p   Cbeta  ne  fe  other ox  hx
-
-    this.depty = new Array(13);
-    this.widxz = new Array(13);
-    this.fixsf = 2;
-    this.faces = undefined;
-    this.verts = undefined;
-    this.nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
-               [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0], [1, 0, 1], [1, 0, -1],
-               [-1, 0, 1], [-1, 0, -1], [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
-               [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, -1, -1]];
 }
+ProteinSurface.prototype.ptranx = undefined;
+ProteinSurface.prototype.ptrany = undefined;
+ProteinSurface.prototype.ptranz = undefined;
+ProteinSurface.prototype.boxLength = 128;
+ProteinSurface.prototype.probeRadius = 1.4;
+ProteinSurface.prototype.scaleFactor = 1;
+ProteinSurface.prototype.pHeight = undefined;
+ProteinSurface.prototype.pWidth = undefined;
+ProteinSurface.prototype.pLength = undefined;
+ProteinSurface.prototype.cutRadius = undefined;
+ProteinSurface.prototype.vp = undefined;
+ProteinSurface.prototype.vertnumber = undefined;
+ProteinSurface.prototype.facenumber = undefined;
+ProteinSurface.prototype.pminx = undefined;
+ProteinSurface.prototype.pminy = undefined;
+ProteinSurface.prototype.pminz = undefined;
+ProteinSurface.prototype.pmaxx = undefined;
+ProteinSurface.prototype.pmaxy = undefined;
+ProteinSurface.prototype.pmaxz = undefined;
+ProteinSurface.prototype.rasrad = [1.90, 1.88, 1.63, 1.48, 1.78, 1.2, 1.87, 1.96, 1.63, 0.74, 1.8, 1.48, 1.2]; //liang
+//             Calpha   c    n    o    s   h   p   Cbeta  ne  fe  other ox  hx
+
+ProteinSurface.prototype.depty = new Array(13);
+ProteinSurface.prototype.widxz = new Array(13);
+ProteinSurface.prototype.fixsf = 2;
+ProteinSurface.prototype.faces = undefined;
+ProteinSurface.prototype.verts = undefined;
+ProteinSurface.prototype.nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
+           [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0], [1, 0, 1], [1, 0, -1],
+           [-1, 0, 1], [-1, 0, -1], [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
+           [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, -1, -1]];
 
 ProteinSurface.prototype.getModel = function (atoms, atomlist) {
     var i,

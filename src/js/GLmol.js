@@ -47,6 +47,22 @@
     TF3 = THREE.Face3;
     TCo = THREE.Color;
 
+    THREE.Geometry.prototype.colorAll = function (color) {
+        this.faces.forEach(function (face) { face.color = color; });
+    };
+
+    THREE.Matrix4.prototype.isIdentity = function() {
+        var i, j;
+        for (i = 0; i < 4; i++) {
+            for (j = 0; j < 4; j++) { 
+                if (this.elements[i * 4 + j] != (i === j) ? 1 : 0) { return false; }
+            }
+        }
+        return true;
+    };
+
+
+
     function GLmol(queryselector, suppressAutoload) {
         if (!queryselector) {
             return false;
@@ -102,11 +118,40 @@
     };
 
     GLmol.prototype.Nucleotides = ['  G', '  A', '  T', '  C', '  U', ' DG', ' DA', ' DT', ' DC', ' DU'];
-    GLmol.prototype.ElementColors = {"H": 0xCCCCCC, "C": 0xAAAAAA, "O": 0xCC0000, "N": 0x0000CC, "S": 0xCCCC00, "P": 0x6622CC, "F": 0x00CC00, "CL": 0x00CC00, "BR": 0x882200, "I": 0x6600AA, "FE": 0xCC6600, "CA": 0x8888AA};
+    GLmol.prototype.ElementColors = {
+        "H": 0xCCCCCC,
+        "C": 0xAAAAAA,
+        "O": 0xCC0000,
+        "N": 0x0000CC,
+        "S": 0xCCCC00,
+        "P": 0x6622CC,
+        "F": 0x00CC00,
+        "CL": 0x00CC00,
+        "BR": 0x882200,
+        "I": 0x6600AA,
+        "FE": 0xCC6600,
+        "CA": 0x8888AA
+    };
     // Reference: A. Bondi, J. Phys. Chem., 1964, 68, 441.
-    GLmol.prototype.vdwRadii = {"H": 1.2, "Li": 1.82, "Na": 2.27, "K": 2.75, "C": 1.7, "N": 1.55, "O": 1.52,
-                        "F": 1.47, "P": 1.80, "S": 1.80, "CL": 1.75, "BR": 1.85, "SE": 1.90,
-                        "ZN": 1.39, "CU": 1.4, "NI": 1.63};
+    GLmol.prototype.vdwRadii = {
+        "H": 1.2,
+        "Li": 1.82,
+        "Na": 2.27,
+        "K": 2.75,
+        "C": 1.7,
+        "N": 1.55,
+        "O": 1.52,
+        "F": 1.47,
+        "P": 1.80,
+        "S": 1.80,
+        "CL": 1.75,
+        "BR": 1.85,
+        "SE": 1.90,
+        "ZN": 1.39,
+        "CU": 1.4,
+        "NI": 1.63
+    };
+
     GLmol.prototype.NEAR = 1;
     GLmol.prototype.FAR = 800;
     GLmol.prototype.CAMERA_Z = -150;
@@ -155,12 +200,12 @@
     GLmol.prototype.setupLights = function (scene) {
         var directionalLight, ambientLight;
 
-        directionalLight =  new THREE.DirectionalLight(0xFFFFFF);
+        directionalLight =  new THREE.DirectionalLight(0xFFFFFF); //MAGIC
         directionalLight.position = new TV3(0.2, 0.2, -1).normalize();
         directionalLight.intensity = 1.2;
         scene.add(directionalLight);
 
-        ambientLight = new THREE.AmbientLight(0x202020);
+        ambientLight = new THREE.AmbientLight(0x202020); //MAGIC
         scene.add(ambientLight);
     };
 
@@ -488,7 +533,7 @@
             side: THREE.DoubleSide
         });
         return this.getMesh(material, geometry, options);
-    }
+    };
 
 
     GLmol.prototype.getMesh = function (material, geometry, options) {
@@ -667,7 +712,7 @@
             return (new TV3(vertices[edge][0], vertices[edge][1], vertices[edge][2]));
         });
 
-        lineMaterial = new THREE.LineBasicMaterial({linewidth: 1, color: 0xcccccc});
+        lineMaterial = new THREE.LineBasicMaterial({linewidth: 1, color: 0xcccccc}); // MAGIC
         line = new THREE.Line(geo, lineMaterial);
         line.type = THREE.LinePieces;
         group.add(line);
@@ -1330,7 +1375,7 @@
             currentChain,
             currentResi,
             currentComponent = new Array(baseAtoms.length),
-            color = new TCo(0xcc0000),
+            color = new TCo(0xcc0000), // MAGIC
             i,
             atom,
             pos,
@@ -1906,7 +1951,7 @@
         this.protein.appliedMatrix = new THREE.Matrix4();
         for (i = 0; i < matrices.length; i++) {
             mat = matrices[i];
-            if (mat === undefined || mat.isIdentity()) { continue; }
+            if (!mat || mat.isIdentity()) { continue; }
             //console.log(mat);
             symmetryMate = THREE.SceneUtils.cloneObject(asu);
             symmetryMate.matrix = mat;
@@ -1965,7 +2010,6 @@
         ctx.font = size + "pt Arial";
         canvas.width = ctx.measureText(text).width;
         canvas.height = size; //size; // This resets fonts, so we have to set it again
-        console.log(ctx.font);
         ctx.fillStyle = color || "rgba(0, 0, 0, 1.0)";
         ctx.strokeStyle = ctx.fillStyle;
         ctx.font = size + "pt Arial";
@@ -1978,26 +2022,11 @@
         return tex;
     };
 
-    GLmol.prototype.getBillboardMesh = function () {
-        //if (this.bbmesh) { return this.bbmesh; }
-
-        //var geo = new THREE.Geometry(),
-            //i;
-        //for (i = 0; i < 6; i++) {
-            //geo.vertices.push(new THREE.Vector3(0, 0, 0));
-        //}
-        //geo.faces.push(new THREE.Face3(0, 1, 2));
-        //geo.faces.push(new THREE.Face3(0, 2, 3));
-        //geo.faceVertexUvs[0].push([new THREE.UV(0, 0), new THREE.UV(1, 1), new THREE.UV(0, 1)]);
-        //geo.faceVertexUvs[0].push([new THREE.UV(0, 0), new THREE.UV(1, 0), new THREE.UV(1, 1)]);
-        //return (this.bbmesh = geo);
-    };
-
     GLmol.prototype.billboard = function (texture) {
         var sprite = new THREE.Sprite({
             map: texture,
             useScreenCoordinates: false,
-            transparent: true,
+            transparent: true
         });
         return sprite;
     };
@@ -2013,13 +2042,10 @@
         bb.position.set(atom.x - 1, atom.y + 1, atom.z);
         this.modelGroup.add(bb);
         this.show();
-
-    
-    }
+    };
 
     GLmol.prototype.defineRepresentation = function () {
         var all = this.getAllAtoms(),
-            //hetatm = this.removeSolvents(this.getHetatms(all));
             hetatm = this.getHetatms(all).filter(isNotSolvent);
 
         this.colorByAtom(all, {});
@@ -2124,7 +2150,7 @@
 
     GLmol.prototype.loadMoleculeStr = function (repressZoom, source) {
         var time = new Date(),
-            title = document.querySelector(this.queryselector + '_pdbTitle'),
+            title_elem = document.querySelector(this.queryselector + '_pdbTitle'),
             titleStr = '',
             parser_id,
             parsers = [this.parsePDB2, this.parseSDF, this.parseXYZ];
@@ -2139,12 +2165,19 @@
         }
         console.log("parsed in " + (+new Date() - time) + "ms");
 
-        if (this.protein.pdbID !== '') { titleStr += '<a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=' + this.protein.pdbID + '">' + this.protein.pdbID + '</a>'; }
-        if (this.protein.title !== '') { titleStr += '<br>' + this.protein.title; }
+        if (this.protein.pdbID) {
+            titleStr += '<a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=' + this.protein.pdbID + '">' + this.protein.pdbID + '</a>';
+        }
+        if (this.protein.title) {
+            titleStr += '<br>' + this.protein.title;
+        }
 
-        if (title) { title.innerHTML = titleStr; }// jQ's method is more thorough
+        if (title_elem) {
+            title_elem.innerHTML = titleStr;
+        }// jQ's method is more thorough
 
         this.rebuildScene(true);
+
         if (!repressZoom) {
             this.zoomInto(this.getAllAtoms());
         }
@@ -2253,7 +2286,7 @@
             dy = y - me.mouseStartY;
             r = Math.sqrt(dx * dx + dy * dy);
             if (r > 2) {
-              return;
+                return;
             }
             x -= me.container.position().left;
             y -= me.container.position().top;
@@ -2280,7 +2313,7 @@
             }
             atom = nearest[1];
             if (!atom) { return; }
-            
+
             var label = [atom.chain, atom.resn, atom.resi].join(":");
             var bla = me.labelAtom(atom, label);
         });
@@ -2345,7 +2378,9 @@
 
 
     GLmol.prototype.show = function () {
-        if (!this.scene) { return; }
+        if (!this.scene) {
+            return;
+        }
 
     //
      //   var time = new Date();

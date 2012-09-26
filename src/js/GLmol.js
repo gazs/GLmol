@@ -890,10 +890,10 @@
             atom,
             j;
 
+        atomlist = this.getAtoms(atomlist).filter(isNotUndefined);
 
         for (i = 0, lim = atomlist.length; i < lim; i++) {
-            atom = this.atoms[atomlist[i]];
-            if (!atom) { continue; }
+            atom = atomlist[i];
 
             c = new TCo(atom.color);
             for (j = 0; j < 6; j++) {
@@ -1274,10 +1274,10 @@
             points[k] = [];
         }
 
+        atomlist = this.getAtoms(atomlist).filter(isNotUndefined);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
-                atom = this.atoms[atomlist[i]];
-                if (!atom) { continue; }
+                atom = atomlist[i];
 
                 if ((atom.atom === 'O' || atom.atom === 'CA') && !atom.hetflag) {
                     if (atom.atom === 'CA') {
@@ -1734,10 +1734,10 @@
         xmax = ymax = zmax = -999;
         xsum = ysum = zsum = cnt = 0;
 
+        atomlist = this.getAtoms(atomlist).filter(isNotUndefined);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
-                atom = this.atoms[atomlist[i]];
-                if (!atom) { continue; }
+                atom = atomlist[i];
                 cnt++;
 
                 xsum += atom.x;
@@ -1907,14 +1907,15 @@
             atom,
             i,
             total,
-            color;
+            color,
+
+        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
-                atom = this.atoms[atomlist[i]];
-                if (!atom) { continue; }
+                atom = atomlist[i];
 
-                if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'') && !atom.hetflag) {
+                if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'')) {
                     cnt++;
                 }
             }
@@ -1925,10 +1926,9 @@
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
-                atom = this.atoms[atomlist[i]];
-                if (!atom) { continue; }
+                atom = atomlist[i];
 
-                if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'') && !atom.hetflag) {
+                if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'')) {
                     color = new TCo(0);
                     color.setHSV(240.0 / 360 * (1 - cnt / total), 1, 0.9);
                     atom.color = color.getHex();

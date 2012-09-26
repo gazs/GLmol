@@ -57,8 +57,8 @@
 
         if (hasWebgl) {
             this.renderer = new THREE.WebGLRenderer({antialias: true});
-        } else if (hasCanvas) {
-            this.renderer = new THREE.CanvasRenderer();
+        //} else if (hasCanvas) {
+            //this.renderer = new THREE.CanvasRenderer();
         } else {
             throw new Error("no suitable renderer");
         }
@@ -135,15 +135,15 @@
 
 
     GLmol.prototype.attachResizeEvent = function () {
-        var self = this;
+        var me = this;
         $(window).resize(function () { // only window can capture resize event
-            self.WIDTH = self.container.width() * self.aaScale;
-            self.HEIGHT = self.container.height() * self.aaScale;
-            self.ASPECT = self.WIDTH / self.HEIGHT;
-            self.renderer.setSize(self.WIDTH, self.HEIGHT);
-            self.camera.aspect = self.ASPECT;
-            self.camera.updateProjectionMatrix();
-            self.show();
+            me.WIDTH = me.container.width() * me.aaScale;
+            me.HEIGHT = me.container.height() * me.aaScale;
+            me.ASPECT = me.WIDTH / me.HEIGHT;
+            me.renderer.setSize(me.WIDTH, me.HEIGHT);
+            me.camera.aspect = me.ASPECT;
+            me.camera.updateProjectionMatrix();
+            me.show();
         });
     };
 
@@ -477,11 +477,16 @@
         return ret;
     };
 
-    GLmol.prototype.getMesh = function (geometry, options) {
+    GLmol.prototype.getLambertMesh = function (geometry, options) {
         var material = new THREE.MeshLambertMaterial({
             vertexColors: THREE.FaceColors,
             side: THREE.DoubleSide
         });
+        return this.getMesh(material, geometry, options);
+    }
+
+
+    GLmol.prototype.getMesh = function (material, geometry, options) {
         material.setValues(options);
         return new THREE.Mesh(geometry, material);
     };
@@ -490,14 +495,15 @@
 
         var that = this;
         this.getAtoms(atomlist).filter(isNotUndefined).forEach(function (atom) {
-            var sphereMaterial,
-                sphere,
-                r = (!forceDefault && that.vdwRadii[atom.elem] !== undefined) ? that.vdwRadii[atom.elem] : defaultRadius;
+            var sphere,
+                r = defaultRadius;
 
-            if (!forceDefault && scale) {
-                r *= scale;
+            if (!forceDefault) {
+                scale = scale || 1;
+                r = (that.vdwRadii[atom.elem] || defaultRadius) * scale;
             }
-            sphere = that.getMesh(geometry, {color: atom.color});
+
+            sphere = that.getLambertMesh(geometry, {color: atom.color});
             sphere.scale.x = sphere.scale.y = sphere.scale.z = r;
             sphere.position.x = atom.x;
             sphere.position.y = atom.y;
@@ -563,8 +569,7 @@
     };
 
     GLmol.prototype.drawBondsAsStick = function (group, atomlist, bondR, atomR, ignoreNonbonded, multipleBonds, scale) {
-        var sphereGeometry = new THREE.SphereGeometry(1, this.sphereQuality, this.sphereQuality),
-            nAtoms = atomlist.length,
+        var nAtoms = atomlist.length,
             mp,
             forSpheres = [],
             _i,
@@ -578,16 +583,6 @@
         if (multipleBonds) {
             bondR /= 2.5;
         }
-
-        //this.getAtoms(atomlist).filter(isNotUndefined).forEach(function (atom) {
-              //order = this.isConnected(atom1, atom2); // FIXME not actually a boolean!
-              //if (order === 0) {
-                  //return;
-              //}
-              //atom1.connected = atom2.connected = true;
-              //this.drawBondAsStickSub(group, atom1, atom2, bondR, (!!multipleBonds) ? order : 1);
-
-        //});
 
         for (_i = 0; _i < nAtoms; _i++) {
             i = atomlist[_i];
@@ -826,9 +821,10 @@
             geo.colors.push(new TCo(colors[(i === 0) ? 0 : Math.round((i - 1) / div)]));
         }
 
-        lineMaterial = new THREE.LineBasicMaterial({linewidth: width});
-        lineMaterial.vertexColors = true;
-        line = new THREE.Line(geo, lineMaterial);
+        line = this.getLineMesh({linewidth: width, type: THREE.LineStrip});
+        //lineMaterial = new THREE.LineBasicMaterial({linewidth: width});
+        //lineMaterial.vertexColors = true;
+        //line = new THREE.Line(geo, lineMaterial);
         line.type = THREE.LineStrip;
         group.add(line);
     };
@@ -953,7 +949,7 @@
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
 
-        mesh = this.getMesh(geo);
+        mesh = this.getLambertMesh(geo);
         group.add(mesh);
     };
 
@@ -965,7 +961,8 @@
             currentResi,
             i,
             atom;
-        if (!div) { div = 5; }
+
+        div = div || 5;
 
         atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
 
@@ -1029,11 +1026,17 @@
     };
 
     GLmol.prototype.drawStrip = function (group, p1, p2, colors, div, thickness) {
-        if ((p1.length) < 2) { return; }
+        if ((p1.length) < 2) {
+            return;
+        }
+
         div = div || this.axisDIV;
+
         p1 = this.subdivide(p1, div);
         p2 = this.subdivide(p2, div);
-        if (!thickness) { return this.drawThinStrip(group, p1, p2, colors, div); }
+        if (!thickness) {
+            return this.drawThinStrip(group, p1, p2, colors, div);
+        }
 
         var geo = new THREE.Geometry(),
             axis,
@@ -1086,11 +1089,10 @@
         geo.faces.push(new THREE.Face4(vsize, vsize + 2, vsize + 6, vsize + 4, undefined, geo.faces[0].color));
         geo.faces.push(new THREE.Face4(vsize + 1, vsize + 5, vsize + 7, vsize + 3, undefined, geo.faces[geo.faces.length - 3].color));
 
-        // creation again!
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
 
-        mesh = this.getMesh(geo);
+        mesh = this.getLambertMesh(geo);
         group.add(mesh);
     };
 
@@ -1113,11 +1115,10 @@
             geo.faces.push(f);
         }
 
-        // creation again!
         geo.computeFaceNormals();
         geo.computeVertexNormals(false);
 
-        mesh = this.getMesh(geo);
+        mesh = this.getLambertMesh(geo);
         group.add(mesh);
     };
 
@@ -1143,7 +1144,7 @@
             this.faceVertexUvs = [];
         }
 
-        cylinder = this.getMesh(this.cylinderGeometry, {color: color.getHex()});
+        cylinder = this.getLambertMesh(this.cylinderGeometry, {color: color.getHex()});
         cylinder.position = midpoint;
         cylinder.lookAt(from);
         cylinder.updateMatrix();
@@ -1164,24 +1165,30 @@
             i,
             atom;
 
+        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
-                atom = this.atoms[atomlist[i]];
-                if (!atom || atom.hetflag) { continue; }
+                atom = atomlist[i];
                 if ((atom.ss !== 'h' && atom.ss !== 's') || atom.ssend || atom.ssbegin) { others.push(atom.serial); }
                 if (atom.ss === 's') { beta.push(atom.serial); }
                 if (atom.atom !== 'CA') { continue; }
 
                 if (atom.ss === 'h' && atom.ssend) {
-                    if (start !== null) { this.drawCylinder(group, new TV3(start.x, start.y, start.z), new TV3(atom.x, atom.y, atom.z), radius, atom.color, true); }
+                    if (start !== null) {
+                        this.drawCylinder(group, new TV3(start.x, start.y, start.z), new TV3(atom.x, atom.y, atom.z), radius, atom.color, true);
+                    }
                     start = null;
                 }
                 currentChain = atom.chain;
                 currentResi = atom.resi;
-                if (start === null && atom.ss === 'h' && atom.ssbegin) { start = atom; }
+                if (start === null && atom.ss === 'h' && atom.ssbegin) {
+                    start = atom;
+                }
             }
         }
-        if (start !== null) { this.drawCylinder(group, new TV3(start.x, start.y, start.z), new TV3(atom.x, atom.y, atom.z), radius, atom.color); }
+        if (start !== null) {
+            this.drawCylinder(group, new TV3(start.x, start.y, start.z), new TV3(atom.x, atom.y, atom.z), radius, atom.color);
+        }
         this.drawMainchainTube(group, others, "CA", 0.3);
         this.drawStrand(group, beta, undefined, undefined, true,  0, this.helixSheetWidth, false, this.thickness * 2);
     };
@@ -1351,7 +1358,7 @@
 
         geo.computeFaceNormals();
 
-        mesh = this.getMesh(geo);
+        mesh = this.getLambertMesh(geo);
         group.add(mesh);
     };
 
@@ -1948,71 +1955,46 @@
         var canvas = document.createElement("canvas"),
             ctx = canvas.getContext("2d"),
             tex;
+
         canvas.style.backgroundColor = "rgba(0, 0, 0, 0.0)";
-        ctx.font = size + "px Arial";
+        ctx.font = size + "pt Arial";
         canvas.width = ctx.measureText(text).width;
-        canvas.height = size; // This resets fonts, so we have to set it again
+        canvas.height = size; //size; // This resets fonts, so we have to set it again
+        console.log(ctx.font);
         ctx.fillStyle = color || "rgba(0, 0, 0, 1.0)";
         ctx.strokeStyle = ctx.fillStyle;
-        ctx.font = size + "px Arial";
+        ctx.font = size + "pt Arial";
         ctx.fillText(text, 0, size * 0.9);
-        // this.renderer.domElement.parentElement.appendChild(canvas);
+        this.renderer.domElement.parentElement.appendChild(canvas);
 
         tex = new THREE.Texture(canvas);
         tex.needsUpdate = true;
-        tex.magFilter = tex.minFilter = THREE.LinearFilter;
+        //tex.magFilter = tex.minFilter = THREE.LinearFilter;
         return tex;
     };
 
     GLmol.prototype.getBillboardMesh = function () {
-        if (this.bbmesh) { return this.bbmesh; }
+        //if (this.bbmesh) { return this.bbmesh; }
 
-        var geo = new THREE.Geometry(),
-            i;
-        for (i = 0; i < 6; i++) {
-            geo.vertices.push(new THREE.Vector3(0, 0, 0));
-        }
-        geo.faces.push(new THREE.Face3(0, 1, 2));
-        geo.faces.push(new THREE.Face3(0, 2, 3));
-        geo.faceVertexUvs[0].push([new THREE.UV(0, 0), new THREE.UV(1, 1), new THREE.UV(0, 1)]);
-        geo.faceVertexUvs[0].push([new THREE.UV(0, 0), new THREE.UV(1, 0), new THREE.UV(1, 1)]);
-        return (this.bbmesh = geo);
+        //var geo = new THREE.Geometry(),
+            //i;
+        //for (i = 0; i < 6; i++) {
+            //geo.vertices.push(new THREE.Vector3(0, 0, 0));
+        //}
+        //geo.faces.push(new THREE.Face3(0, 1, 2));
+        //geo.faces.push(new THREE.Face3(0, 2, 3));
+        //geo.faceVertexUvs[0].push([new THREE.UV(0, 0), new THREE.UV(1, 1), new THREE.UV(0, 1)]);
+        //geo.faceVertexUvs[0].push([new THREE.UV(0, 0), new THREE.UV(1, 0), new THREE.UV(1, 1)]);
+        //return (this.bbmesh = geo);
     };
 
-    GLmol.prototype.vs_billboard = "uniform float width, height;\nvarying vec2 vUv;\n" +
-        "void main() {\n mat4 mv = modelViewMatrix;\n mv[0][0] = mv[1][1] = mv[2][2] = 1.0;\n" +
-        "mv[0][1] = mv[0][2] = mv[1][0] = mv[1][2] = mv[2][0] =  mv[2][1] = 0.0;\n" +
-        "mat4 mat = projectionMatrix * mv;\n vUv = uv;\n" +
-        "float aspect = projectionMatrix[1][1] / projectionMatrix[0][0];\n" +
-        "gl_Position = mat * vec4(position, 1.0);\n gl_Position /= gl_Position.w;\n" +
-        "gl_Position += vec4(uv.x * width / 1000.0, uv.y * height * aspect / 1000.0, 0.0, 0.0);\n" +
-        "gl_Position.z = -0.9;\n}";
-
-    GLmol.prototype.fs_billboard = "uniform sampler2D map;\n varying vec2 vUv;\n" +
-        "void main() {\n gl_FragColor = texture2D(map, vec2(vUv.x, 1.0 - vUv.y));\n" +
-        "if (gl_FragColor.a < 0.5) discard;// else gl_FragColor = vec4(1.0, 1.0, 1.0, gl_FragColor.a);\n }";
-
-    GLmol.prototype.billboard = function (tex) {
-        var geo = this.getBillboardMesh(),
-            sm = new THREE.ShaderMaterial({
-                uniforms: {
-                    map: {
-                        type: 't',
-                        texture: tex
-                    },
-                    width: {
-                        type: 'f',
-                        value: tex.image.width
-                    },
-                    height: {
-                        type: 'f',
-                        value: tex.image.height
-                    }
-                }
-            });
-        sm.vertexShader = this.vs_billboard;
-        sm.fragmentShader = this.fs_billboard;
-        return new THREE.Mesh(geo, sm);
+    GLmol.prototype.billboard = function (texture) {
+        var sprite = new THREE.Sprite({
+            map: texture,
+            useScreenCoordinates: false,
+            transparent: true,
+        });
+        return sprite;
     };
 
     GLmol.prototype.defineRepresentation = function () {
@@ -2249,9 +2231,9 @@
             dx = x - me.mouseStartX;
             dy = y - me.mouseStartY;
             r = Math.sqrt(dx * dx + dy * dy);
-            //if (r > 2) {
-              //return;
-            //}
+            if (r > 2) {
+              return;
+            }
             x -= me.container.position().left;
             y -= me.container.position().top;
 
@@ -2277,8 +2259,16 @@
             }
             atom = nearest[1];
             if (!atom) { return; }
-            bb = me.billboard(me.createTextTex(atom.chain + ":" + atom.resn + ":" + atom.resi, "30", "#ffffff"));
-            console.log(bb);
+            
+            var label = [atom.chain, atom.resn, atom.resi].join(":");
+
+            var texture = me.createTextTex(label, 30, "#fff");
+            bb = me.billboard(texture);
+            bb.scale.x = texture.image.width / 1000; // FIXME
+            bb.scale.y = texture.image.height / 1000;
+
+
+
             bb.position.set(atom.x, atom.y, atom.z);
             me.modelGroup.add(bb);
             me.show();

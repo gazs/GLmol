@@ -48,18 +48,18 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
         extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.getAllAtoms(), expandedExtent));
         this.meshType = type;
 
-        //ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-        //window.ps = ps;
-        //this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
-        var worker = new Worker("js/ProteinSurface4.js");
-        worker.onmessage = function (event) {
-            console.log("done");
-            that.surfaceGeo = event.data;
-        }
-        worker.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
+        ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+        window.ps = ps;
+        this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
+        //var worker = new Worker("js/ProteinSurface4.js");
+        //worker.onmessage = function (event) {
+            //console.log("done");
+            //that.surfaceGeo = event.data;
+        //}
+        //worker.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
     }
 
-    mesh = this.getMesh(this.surfaceGeo, {wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
+    mesh = this.getLambertMesh(this.surfaceGeo, {wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
     //mat = new THREE.MeshLambertMaterial();
     //mat.vertexColors = THREE.VertexColors;
     //mat.wireframe = wireframe;
@@ -97,6 +97,11 @@ function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
     this.marchingcube(type);
     this.laplaciansmooth(1);
 };
+
+ProteinSurface.VDW = 1;
+ProteinSurface.SES = 2;
+ProteinSurface.SAS = 3;
+ProteinSurface.MS = 4;
 
 ProteinSurface.prototype.inarray = [];
 ProteinSurface.prototype.outarray = [];
@@ -4572,11 +4577,3 @@ ProteinSurface.prototype.marchingcube = function (stype) {
         this.verts[i].atomid = this.vp[verts[i].x * pWidth * pHeight + pHeight * verts[i].y + verts[i].z].atomid;
     }
 };
-
-// });
-
-ProteinSurface.VDW = 1;
-ProteinSurface.SES = 2;
-ProteinSurface.SAS = 3;
-ProteinSurface.MS = 4;
-

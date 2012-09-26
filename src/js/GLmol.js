@@ -522,20 +522,20 @@
             distSquared;
         if (s !== -1) { return atom1.bondOrder[s]; }
 
-        if (this.protein.smallMolecule && (atom1.hetflag || atom2.hetflag)) { return false; } // CHECK: or should I ?
+        if (this.protein.smallMolecule && (atom1.hetflag || atom2.hetflag)) { return 0; } // CHECK: or should I ?
 
         distSquared = (atom1.x - atom2.x) * (atom1.x - atom2.x) +
                       (atom1.y - atom2.y) * (atom1.y - atom2.y) +
                       (atom1.z - atom2.z) * (atom1.z - atom2.z);
 
-    //   if (atom1.altLoc != atom2.altLoc) return false;
-        if (isNaN(distSquared)) { return false; }
-        if (distSquared < 0.5) { return false; } // maybe duplicate position.
+    //   if (atom1.altLoc != atom2.altLoc) return 0;
+        if (isNaN(distSquared)) { return 0; }
+        if (distSquared < 0.5) { return 0; } // maybe duplicate position.
 
-        if (distSquared > 1.3 && (atom1.elem === 'H' || atom2.elem === 'H' || atom1.elem === 'D' || atom2.elem === 'D')) { return false; }
-        if (distSquared < 3.42 && (atom1.elem === 'S' || atom2.elem === 'S')) { return false; }
-        if (distSquared > 2.78) { return false; }
-        return true;
+        if (distSquared > 1.3 && (atom1.elem === 'H' || atom2.elem === 'H' || atom1.elem === 'D' || atom2.elem === 'D')) { return 0; }
+        if (distSquared < 3.42 && (atom1.elem === 'S' || atom2.elem === 'S')) { return 1; }
+        if (distSquared > 2.78) { return 0; }
+        return 1;
     };
 
     GLmol.prototype.drawBondAsStickSub = function (group, atom1, atom2, bondR, order) {

@@ -43,11 +43,6 @@
     TF3 = THREE.Face3;
     TCo = THREE.Color;
 
-    THREE.Geometry.prototype.colorAll = function (color) {
-        this.faces.forEach(function (face) { face.color = color; });
-    };
-
-
     function GLmol(queryselector, suppressAutoload) {
         if (!queryselector) {
             return false;

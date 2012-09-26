@@ -32,7 +32,11 @@
     hasWebgl = (function () {
         if (!hasCanvas) { return false; }
         var canvas  = document.createElement('canvas');
-        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+        try {
+            return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+        } catch (e) {
+            return false;
+        }
     }());
 
     // Workaround for Intel GMA series (gl_FrontFacing causes compilation error)
@@ -89,7 +93,8 @@
         this.mouseStartY = 0;
         this.currentModelPos = 0;
         this.cz = 0;
-        this.enableMouse();
+
+        this.enableMouse(); // TODO: think about using default THREE.js controls
 
         if (!suppressAutoload) {
             this.loadMolecule();
@@ -1965,11 +1970,11 @@
         ctx.strokeStyle = ctx.fillStyle;
         ctx.font = size + "pt Arial";
         ctx.fillText(text, 0, size * 0.9);
-        this.renderer.domElement.parentElement.appendChild(canvas);
+        //this.renderer.domElement.parentElement.appendChild(canvas);
 
         tex = new THREE.Texture(canvas);
         tex.needsUpdate = true;
-        //tex.magFilter = tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = tex.minFilter = THREE.LinearFilter;
         return tex;
     };
 
@@ -1996,6 +2001,21 @@
         });
         return sprite;
     };
+
+    GLmol.prototype.labelAtom = function (atom, text) {
+        var texture = this.createTextTex(text, 30, "#fff");
+        var bb = this.billboard(texture);
+        bb.scale.x = texture.image.width / 1000; // FIXME
+        bb.scale.y = texture.image.height / 1000;
+
+
+
+        bb.position.set(atom.x - 1, atom.y + 1, atom.z);
+        this.modelGroup.add(bb);
+        this.show();
+
+    
+    }
 
     GLmol.prototype.defineRepresentation = function () {
         var all = this.getAllAtoms(),
@@ -2055,6 +2075,16 @@
         this.setupLights(this.scene);
     };
 
+    GLmol.prototype.rebuildScene = function () {
+        var time = new Date(),
+            view = this.getView();
+        this.initializeScene();
+        this.defineRepresentation();
+        this.setView(view);
+
+        console.log("built scene in " + (+new Date() - time) + "ms");
+    };
+
     GLmol.prototype.zoomInto = function (atomlist, keepSlab) {
         var tmp = this.getExtent(atomlist),
             center = new TV3(tmp[2][0], tmp[2][1], tmp[2][2]),
@@ -2085,15 +2115,6 @@
         this.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
     };
 
-    GLmol.prototype.rebuildScene = function () {
-        var time = new Date(),
-            view = this.getView();
-        this.initializeScene();
-        this.defineRepresentation();
-        this.setView(view);
-
-        console.log("built scene in " + (+new Date() - time) + "ms");
-    };
 
     GLmol.prototype.loadMolecule = function (repressZoom) {
         //var source = document.querySelector(this.queryselector + '_src').innerHTML;
@@ -2261,17 +2282,7 @@
             if (!atom) { return; }
             
             var label = [atom.chain, atom.resn, atom.resi].join(":");
-
-            var texture = me.createTextTex(label, 30, "#fff");
-            bb = me.billboard(texture);
-            bb.scale.x = texture.image.width / 1000; // FIXME
-            bb.scale.y = texture.image.height / 1000;
-
-
-
-            bb.position.set(atom.x, atom.y, atom.z);
-            me.modelGroup.add(bb);
-            me.show();
+            var bla = me.labelAtom(atom, label);
         });
 
         glDOM.on('mousemove touchmove', function (ev) { // touchmove

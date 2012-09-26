@@ -49,48 +49,10 @@
 
 
     function GLmol(queryselector, suppressAutoload) {
-        if (queryselector) { this.create('#' + queryselector, suppressAutoload); }
-        return true;
-    }
-    GLmol.prototype.Nucleotides = ['  G', '  A', '  T', '  C', '  U', ' DG', ' DA', ' DT', ' DC', ' DU'];
-    GLmol.prototype.ElementColors = {"H": 0xCCCCCC, "C": 0xAAAAAA, "O": 0xCC0000, "N": 0x0000CC, "S": 0xCCCC00, "P": 0x6622CC, "F": 0x00CC00, "CL": 0x00CC00, "BR": 0x882200, "I": 0x6600AA, "FE": 0xCC6600, "CA": 0x8888AA};
-    // Reference: A. Bondi, J. Phys. Chem., 1964, 68, 441.
-    GLmol.prototype.vdwRadii = {"H": 1.2, "Li": 1.82, "Na": 2.27, "K": 2.75, "C": 1.7, "N": 1.55, "O": 1.52,
-                        "F": 1.47, "P": 1.80, "S": 1.80, "CL": 1.75, "BR": 1.85, "SE": 1.90,
-                        "ZN": 1.39, "CU": 1.4, "NI": 1.63};
-    GLmol.prototype.NEAR = 1;
-    GLmol.prototype.FAR = 800;
-    GLmol.prototype.CAMERA_Z = -150;
-    GLmol.prototype.aaScale = 1;
-    GLmol.prototype.scene = null;
-    GLmol.prototype.rotationGroup = null; // which contains modelGroup
-    GLmol.prototype.modelGroup = null;
-    GLmol.prototype.bgColor = 0x000000;
-    GLmol.prototype.fov = 20;
-    GLmol.prototype.fogStart = 0.4;
-    GLmol.prototype.slabNear = -50; // relative to the center of rotationGroup
-    GLmol.prototype.slabFar = +50;
-    // Default values
-    GLmol.prototype.sphereRadius = 1.5;
-    GLmol.prototype.cylinderRadius = 0.4;
-    GLmol.prototype.lineWidth = 1.5 * GLmol.prototype.aaScale;
-    GLmol.prototype.curveWidth = 3 * GLmol.prototype.aaScale;
-    GLmol.prototype.defaultColor = 0xCCCCCC;
-    GLmol.prototype.sphereQuality = 16; //16;
-    GLmol.prototype.cylinderQuality = 16; //8;
-    GLmol.prototype.axisDIV = 5; // 3 still gives acceptable quality
-    GLmol.prototype.strandDIV = 6;
-    GLmol.prototype.nucleicAcidStrandDIV = 4;
-    GLmol.prototype.tubeDIV = 8;
-    GLmol.prototype.coilWidth = 0.3;
-    GLmol.prototype.helixSheetWidth = 1.3;
-    GLmol.prototype.nucleicAcidWidth = 0.8;
-    GLmol.prototype.thickness = 0.4;
-    GLmol.prototype.protein = {sheet: [], helix: [], biomtChains: '', biomtMatrices: [], symMat: [], pdbID: '', title: ''};
-    GLmol.prototype.atoms = [];
-
-    GLmol.prototype.create = function (queryselector, suppressAutoload) {
-        this.queryselector = queryselector;
+        if (!queryselector) {
+            return false;
+        }
+        this.queryselector = '#' + queryselector;
         this.aaScale = 1; // or 2
 
         this.container = $(this.queryselector);
@@ -138,6 +100,44 @@
             this.loadMolecule();
         }
     };
+
+    GLmol.prototype.Nucleotides = ['  G', '  A', '  T', '  C', '  U', ' DG', ' DA', ' DT', ' DC', ' DU'];
+    GLmol.prototype.ElementColors = {"H": 0xCCCCCC, "C": 0xAAAAAA, "O": 0xCC0000, "N": 0x0000CC, "S": 0xCCCC00, "P": 0x6622CC, "F": 0x00CC00, "CL": 0x00CC00, "BR": 0x882200, "I": 0x6600AA, "FE": 0xCC6600, "CA": 0x8888AA};
+    // Reference: A. Bondi, J. Phys. Chem., 1964, 68, 441.
+    GLmol.prototype.vdwRadii = {"H": 1.2, "Li": 1.82, "Na": 2.27, "K": 2.75, "C": 1.7, "N": 1.55, "O": 1.52,
+                        "F": 1.47, "P": 1.80, "S": 1.80, "CL": 1.75, "BR": 1.85, "SE": 1.90,
+                        "ZN": 1.39, "CU": 1.4, "NI": 1.63};
+    GLmol.prototype.NEAR = 1;
+    GLmol.prototype.FAR = 800;
+    GLmol.prototype.CAMERA_Z = -150;
+    GLmol.prototype.aaScale = 1;
+    GLmol.prototype.scene = null;
+    GLmol.prototype.rotationGroup = null; // which contains modelGroup
+    GLmol.prototype.modelGroup = null;
+    GLmol.prototype.bgColor = 0x000000;
+    GLmol.prototype.fov = 20;
+    GLmol.prototype.fogStart = 0.4;
+    GLmol.prototype.slabNear = -50; // relative to the center of rotationGroup
+    GLmol.prototype.slabFar = +50;
+    // Default values
+    GLmol.prototype.sphereRadius = 1.5;
+    GLmol.prototype.cylinderRadius = 0.4;
+    GLmol.prototype.lineWidth = 1.5 * GLmol.prototype.aaScale;
+    GLmol.prototype.curveWidth = 3 * GLmol.prototype.aaScale;
+    GLmol.prototype.defaultColor = 0xCCCCCC;
+    GLmol.prototype.sphereQuality = 16; //16;
+    GLmol.prototype.cylinderQuality = 16; //8;
+    GLmol.prototype.axisDIV = 5; // 3 still gives acceptable quality
+    GLmol.prototype.strandDIV = 6;
+    GLmol.prototype.nucleicAcidStrandDIV = 4;
+    GLmol.prototype.tubeDIV = 8;
+    GLmol.prototype.coilWidth = 0.3;
+    GLmol.prototype.helixSheetWidth = 1.3;
+    GLmol.prototype.nucleicAcidWidth = 0.8;
+    GLmol.prototype.thickness = 0.4;
+    GLmol.prototype.protein = {sheet: [], helix: [], biomtChains: '', biomtMatrices: [], symMat: [], pdbID: '', title: ''};
+    GLmol.prototype.atoms = [];
+
 
     GLmol.prototype.attachResizeEvent = function () {
         var self = this;
@@ -2034,7 +2034,10 @@
     };
 
     GLmol.prototype.getView = function () {
-        if (!this.modelGroup) { return [0, 0, 0, 0, 0, 0, 0, 1]; }
+        if (!this.modelGroup) {
+            return [0, 0, 0, 0, 0, 0, 0, 1];
+        }
+
         var pos = this.modelGroup.position,
             q = this.rotationGroup.quaternion;
         return [pos.x, pos.y, pos.z, this.rotationGroup.position.z, q.x, q.y, q.z, q.w];

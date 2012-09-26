@@ -3342,7 +3342,7 @@ END
 //-View/Small molecules(HETATMs) as sticks
 var glmol01 = new GLmol('glmol01', true);
 glmol01.defineRepresentation = function() {
-   var all = this.getAllAtoms();
+   var all = this.atoms;
    var hetatm = this.removeSolvents(this.getHetatms(all));
 
    this.colorByAtom(all, {});

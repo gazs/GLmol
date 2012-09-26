@@ -259,7 +259,7 @@ function defineRepFromController() {
   }
 
 var time = new Date();
-   var all = this.getAllAtoms();
+   var all = this.atoms; // this.getAllAtoms();
    if ($(idHeader + 'biomt').attr('checked') && this.protein.biomtChains != "") all = this.getChain(all, this.protein.biomtChains);
    var allHet = this.getHetatms(all);
    var hetatm = this.removeSolvents(allHet);

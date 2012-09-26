@@ -544,7 +544,7 @@
     GLmol.prototype.drawAtoms = function (geometry, group, atomlist, defaultRadius, forceDefault, scale) {
 
         var that = this;
-        this.getAtoms(atomlist).filter(isNotUndefined).forEach(function (atom) {
+        atomlist.filter(isNotUndefined).forEach(function (atom) {
             var sphere,
                 r = defaultRadius;
 
@@ -635,12 +635,10 @@
         }
 
         for (_i = 0; _i < nAtoms; _i++) {
-            i = atomlist[_i];
-            atom1 = this.atoms[i];
+            atom1 = atomlist[_i];
             if (!atom1) { continue; }
             for (_j = _i + 1; _j < _i + 30 && _j < nAtoms; _j++) {
-                j = atomlist[_j];
-                atom2 = this.atoms[j];
+                atom2 = atomlist[_j];
                 if (!atom2) {
                     continue;
                 }
@@ -660,7 +658,7 @@
             }
 
             if (atom1.connected) {
-                forSpheres.push(i);
+                forSpheres.push(atom1);
             }
         }
         this.drawAtomsAsSphere(group, forSpheres, atomR, !scale, scale);
@@ -825,12 +823,10 @@
 
 
         for (_i = 0; _i < nAtoms; _i++) {
-            i = atomlist[_i];
-            atom1 = this.atoms[i];
+            atom1 = atomlist[_i];
             if (!atom1) { continue; }
             for (_j = _i + 1; _j < _i + 30 && _j < nAtoms; _j++) {
-                j = atomlist[_j];
-                atom2 = this.atoms[j];
+                atom2 = atomlist[_j];
                 if (!atom2) { continue; }
                 order = this.isConnected(atom1, atom2);
                 if (order === 0) { continue; }
@@ -890,7 +886,7 @@
             atom,
             j;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined);
+        atomlist = atomlist.filter(isNotUndefined);
 
         for (i = 0, lim = atomlist.length; i < lim; i++) {
             atom = atomlist[i];
@@ -1014,7 +1010,7 @@
 
         div = div || 5;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
@@ -1046,7 +1042,7 @@
             i,
             atom;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
@@ -1215,7 +1211,7 @@
             i,
             atom;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
@@ -1274,7 +1270,7 @@
             points[k] = [];
         }
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined);
+        atomlist = atomlist.filter(isNotUndefined);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
@@ -1382,7 +1378,7 @@
             mat,
             mesh;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
@@ -1420,7 +1416,7 @@
             i,
             atom;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
@@ -1463,7 +1459,7 @@
             mat,
             line;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
@@ -1534,7 +1530,7 @@
             points[k] = [];
         }
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined);
+        atomlist = atomlist.filter(isNotUndefined);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
@@ -1664,37 +1660,43 @@
     isNotSolvent = GLmol.isNotSolvent;
 
     function getAtomSerial(atom) {
-        return atom.serial;
+        debugger;
+        console.warn("getAtomSerial is deprecated, use atom's index instead")
+        return atom;
+        //return atom.serial;
     }
 
     /* */
 
     GLmol.prototype.getAllAtoms = function () {
+        console.warn("getAllAtoms is deprecated, use .atoms instead")
         return this.atoms.map(getAtomSerial);
     };
 
     GLmol.prototype.getAtoms = function (atomlist) {
-        return this.atoms.filter(function (atom, index) {
-            if (atomlist.indexOf(index) !== -1) { return true; }
-        });
+        console.warn("getAtoms is deprecated, access atoms list directly")
+        return atomlist;
+        //return this.atoms.filter(function (atom, index) {
+            //if (atomlist.indexOf(index) !== -1) { return true; }
+        //});
     };
 
 
     GLmol.prototype.getHetatms = function (atomlist) {
-        return this.getAtoms(atomlist).filter(isNotUndefined).filter(hasHetflag).map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(hasHetflag) //.map(getAtomSerial);
     };
 
     GLmol.prototype.removeSolvents = function (atomlist) {
-        return this.getAtoms(atomlist).filter(isNotUndefined).filter(isNotSolvent).map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(isNotSolvent) //.map(getAtomSerial);
     };
 
     GLmol.prototype.getProteins = function (atomlist) {
-        return this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag).map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(noHetflag) //.map(getAtomSerial);
     };
 
     // TODO: Test
     GLmol.prototype.excludeAtoms = function (atomlist, deleteList) {
-        return this.getAtoms(atomlist).filter(function (atom) { return (deleteList.indexOf(atom) === -1); });
+        return atomlist.filter(function (atom) { return (deleteList.indexOf(atom) === -1); });
     };
 
 
@@ -1703,17 +1705,17 @@
         function isSidechain(atom) {
             return !(atom.atom === 'C' || atom.atom === 'O' || (atom.atom === 'N' && atom.resn !== "PRO"));
         }
-        return this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag).filter(isSidechain).map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(noHetflag).filter(isSidechain) //.map(getAtomSerial);
     };
 
     GLmol.prototype.getAtomsWithin = function (atomlist, extent) {
-        return this.getAtoms(atomlist).filter(isNotUndefined).filter(function (atom) {
+        return atomlist.filter(isNotUndefined).filter(function (atom) {
             if (atom.x < extent[0][0] || atom.x > extent[1][0]) { return false; }
             if (atom.y < extent[0][1] || atom.y > extent[1][1]) { return false; }
             if (atom.z < extent[0][2] || atom.z > extent[1][2]) { return false; }
 
             return true;
-        }).map(getAtomSerial);
+        }) //.map(getAtomSerial);
     };
 
     GLmol.prototype.getExtent = function (atomlist) {
@@ -1734,7 +1736,7 @@
         xmax = ymax = zmax = -999;
         xsum = ysum = zsum = cnt = 0;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined);
+        atomlist = atomlist.filter(isNotUndefined);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
@@ -1756,11 +1758,11 @@
     };
 
     GLmol.prototype.getResiduesById = function (atomlist, resi) { // FIXME: this is almost the same as excludeAtoms
-        return this.getAtoms(atomlist).filter(function (atom) { return (resi.indexOf(atom.resi) === -1); });
+        return atomlist.filter(function (atom) { return (resi.indexOf(atom.resi) === -1); });
     };
 
     GLmol.prototype.getResidueBySS = function (atomlist, ss) { // FIXME and again.
-        return this.getAtoms(atomlist).filter(function (atom) { return (ss.indexOf(atom.ss) === -1); });
+        return atomlist.filter(function (atom) { return (ss.indexOf(atom.ss) === -1); });
     };
 
     GLmol.prototype.getChain = function (atomlist, chain) {
@@ -1776,21 +1778,21 @@
             chains[chain.substr(i, 1)] = true;
         }
 
-        return this.getAtoms(atomlist).filter(function (atom) {
+        return atomlist.filter(function (atom) {
             return chains[atom.chain];
-        }).map(getAtomSerial);
+        }) //.map(getAtomSerial);
     };
 
     // for HETATM only
     GLmol.prototype.getNonbonded = function (atomlist, chain) { // XXX chain argument unused!!
-        return this.getAtoms(atomlist).filter(isNotUndefined).filter(hasHetflag).filter(
+        return atomlist.filter(isNotUndefined).filter(hasHetflag).filter(
             function (atom) { return atom.bonds.length === 0; }
-        ).map(getAtomSerial);
+        ) //.map(getAtomSerial);
     };
 
     GLmol.prototype.colorByAtom = function (atomlist, colors) {
         var that = this;
-        this.getAtoms(atomlist).filter(isNotUndefined).forEach(function (atom) {
+        atomlist.filter(isNotUndefined).forEach(function (atom) {
             atom.color = that.ElementColors[atom.elem] || that.defaultColor || colors[atom.elem];
         });
     };
@@ -1798,7 +1800,7 @@
 
     // MEMO: Color only CA. maybe I should add atom.cartoonColor.
     GLmol.prototype.colorByStructure = function (atomlist, helixColor, sheetColor, colorSidechains) {
-        return this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag).filter(notCA).forEach(function (atom) {
+        atomlist.filter(isNotUndefined).filter(noHetflag).filter(notCA).forEach(function (atom) {
             if (atom.ss[0] === 's') {
                 atom.color = sheetColor;
             } else if (atom.ss[0] === 'h') {
@@ -1817,7 +1819,7 @@
             range = (maxB - minB) / 2,
             color;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
@@ -1848,7 +1850,7 @@
     GLmol.prototype.colorByChain = function (atomlist, colorSidechains) {
         var i, atom, color;
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
@@ -1862,7 +1864,7 @@
     };
 
     GLmol.prototype.colorByResidue = function (atomlist, residueColors) {
-        this.getAtoms(atomlist).filter(isNotUndefined).forEach(
+        atomlist.filter(isNotUndefined).forEach(
             function (atom) {
                 var c = residueColors[atom.resn];
                 if (c) {
@@ -1873,7 +1875,7 @@
     };
 
     GLmol.prototype.colorAtoms = function (atomlist, c) {
-        this.getAtoms(atomlist).filter(isNotUndefined).forEach(
+        atomlist.filter(isNotUndefined).forEach(
             function (atom) {
                 atom.color = c;
             }
@@ -1909,7 +1911,7 @@
             total,
             color,
 
-        atomlist = this.getAtoms(atomlist).filter(isNotUndefined).filter(noHetflag);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
@@ -2179,7 +2181,7 @@
         this.rebuildScene(true);
 
         if (!repressZoom) {
-            this.zoomInto(this.getAllAtoms());
+            this.zoomInto(this.atoms);
         }
 
         this.show();

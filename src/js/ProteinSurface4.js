@@ -25,10 +25,15 @@ TODO: Improved performance on Firefox
       Refactor!
 */
 
-// type 1: VDW 3: SAS 4: MS 2: SES
-//
-//
-var GLmol = GLmol || {};
+
+
+// webworker hacks
+var GLmol = GLmol || function () {};
+if (!this.console) {
+  var console = {
+    log: function(){}
+  };
+}
 
 
 GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wireframeLinewidth) {
@@ -43,25 +48,38 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
         extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.getAllAtoms(), expandedExtent));
         this.meshType = type;
 
-        ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-        window.ps = ps;
-        this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
+        //ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+        //window.ps = ps;
+        //this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
+        var worker = new Worker("js/ProteinSurface4.js");
+        worker.onmessage = function (event) {
+            console.log("done");
+            that.surfaceGeo = event.data;
+        }
+        worker.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
     }
-    //TODO: same boilerplate
-    mat = new THREE.MeshLambertMaterial();
-    mat.vertexColors = THREE.VertexColors;
-    mat.wireframe = wireframe;
-    mat.wireframeLinewidth = wireframeLinewidth;
-    //mat.opacity = 0.8;
-    //mat.transparent = true;
-    mesh = new THREE.Mesh(this.surfaceGeo, mat);
-    mesh.doubleSided = true;
+
+    mesh = this.getMesh(this.surfaceGeo, {wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
+    //mat = new THREE.MeshLambertMaterial();
+    //mat.vertexColors = THREE.VertexColors;
+    //mat.wireframe = wireframe;
+    //mat.wireframeLinewidth = wireframeLinewidth;
+    ////mat.opacity = 0.8;
+    ////mat.transparent = true;
+    //mesh = new THREE.Mesh(this.surfaceGeo, mat);
+    //mesh.doubleSided = true;
     group.add(mesh);
 };
 
 
 this.addEventListener('message', function(e) {
-    self.postMessage(e.data);
+    var expandedExtent = e.data[0],
+        type = e.data[1],
+        atoms = e.data[2],
+        extendedAtoms = e.data[3],
+        atomsToShow = e.data[4];
+    ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+    worker.postMessage( ps.getModel(atoms, atomsToShow) )
 
 });
 

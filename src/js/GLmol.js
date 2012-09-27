@@ -2137,6 +2137,7 @@
                 break;
             }
 
+
         }
 
         switch (options.hetatmsAs) {
@@ -2181,6 +2182,12 @@
         }
 
         this.modelGroup.add(asu);
+
+        if (options.proteinSurface) {
+            console.log("generating proteinsurface");
+            this.generateMesh(this.modelGroup, glmol01.atoms, options.proteinSurface);
+        }
+
 
     };
 

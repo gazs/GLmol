@@ -183,7 +183,6 @@
     GLmol.prototype.protein = {sheet: [], helix: [], biomtChains: '', biomtMatrices: [], symMat: [], pdbID: '', title: ''};
     GLmol.prototype.atoms = [];
 
-
     GLmol.prototype.attachResizeEvent = function () {
         var me = this;
         $(window).resize(function () { // only window can capture resize event
@@ -867,10 +866,10 @@
             geo.colors.push(new TCo(colors[(i === 0) ? 0 : Math.round((i - 1) / div)]));
         }
 
-        line = this.getLineMesh({linewidth: width, type: THREE.LineStrip});
-        //lineMaterial = new THREE.LineBasicMaterial({linewidth: width});
-        //lineMaterial.vertexColors = true;
-        //line = new THREE.Line(geo, lineMaterial);
+        //line = this.getLineMesh({linewidth: width, type: THREE.LineStrip});
+        lineMaterial = new THREE.LineBasicMaterial({linewidth: width});
+        lineMaterial.vertexColors = true;
+        line = new THREE.Line(geo, lineMaterial);
         line.type = THREE.LineStrip;
         group.add(line);
     };
@@ -1660,8 +1659,7 @@
     isNotSolvent = GLmol.isNotSolvent;
 
     function getAtomSerial(atom) {
-        debugger;
-        console.warn("getAtomSerial is deprecated, use atom's index instead")
+        console.warn("getAtomSerial is deprecated, use atom's index instead");
         return atom;
         //return atom.serial;
     }
@@ -1669,12 +1667,12 @@
     /* */
 
     GLmol.prototype.getAllAtoms = function () {
-        console.warn("getAllAtoms is deprecated, use .atoms instead")
+        console.warn("getAllAtoms is deprecated, use .atoms instead");
         return this.atoms.map(getAtomSerial);
     };
 
     GLmol.prototype.getAtoms = function (atomlist) {
-        console.warn("getAtoms is deprecated, access atoms list directly")
+        console.warn("getAtoms is deprecated, access atoms list directly");
         return atomlist;
         //return this.atoms.filter(function (atom, index) {
             //if (atomlist.indexOf(index) !== -1) { return true; }
@@ -1683,15 +1681,15 @@
 
 
     GLmol.prototype.getHetatms = function (atomlist) {
-        return atomlist.filter(isNotUndefined).filter(hasHetflag) //.map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(hasHetflag);
     };
 
     GLmol.prototype.removeSolvents = function (atomlist) {
-        return atomlist.filter(isNotUndefined).filter(isNotSolvent) //.map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(isNotSolvent);
     };
 
     GLmol.prototype.getProteins = function (atomlist) {
-        return atomlist.filter(isNotUndefined).filter(noHetflag) //.map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(noHetflag);
     };
 
     // TODO: Test
@@ -1705,7 +1703,7 @@
         function isSidechain(atom) {
             return !(atom.atom === 'C' || atom.atom === 'O' || (atom.atom === 'N' && atom.resn !== "PRO"));
         }
-        return atomlist.filter(isNotUndefined).filter(noHetflag).filter(isSidechain) //.map(getAtomSerial);
+        return atomlist.filter(isNotUndefined).filter(noHetflag).filter(isSidechain);
     };
 
     GLmol.prototype.getAtomsWithin = function (atomlist, extent) {
@@ -1715,7 +1713,7 @@
             if (atom.z < extent[0][2] || atom.z > extent[1][2]) { return false; }
 
             return true;
-        }) //.map(getAtomSerial);
+        });
     };
 
     GLmol.prototype.getExtent = function (atomlist) {
@@ -1780,14 +1778,14 @@
 
         return atomlist.filter(function (atom) {
             return chains[atom.chain];
-        }) //.map(getAtomSerial);
+        });
     };
 
     // for HETATM only
     GLmol.prototype.getNonbonded = function (atomlist, chain) { // XXX chain argument unused!!
         return atomlist.filter(isNotUndefined).filter(hasHetflag).filter(
             function (atom) { return atom.bonds.length === 0; }
-        ) //.map(getAtomSerial);
+        );
     };
 
     GLmol.prototype.colorByAtom = function (atomlist, colors) {
@@ -1909,7 +1907,7 @@
             atom,
             i,
             total,
-            color,
+            color;
 
         atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
@@ -2036,8 +2034,8 @@
     GLmol.prototype.labelAtom = function (atom, text) {
         var texture = this.createTextTex(text, 30, "#fff");
         var bb = this.billboard(texture);
-        bb.scale.x = texture.image.width / 1000; // FIXME
-        bb.scale.y = texture.image.height / 1000;
+        bb.scale.x = texture.image.width / 2000; // FIXME
+        bb.scale.y = texture.image.height / 2000;
 
 
 
@@ -2047,15 +2045,141 @@
     };
 
     GLmol.prototype.defineRepresentation = function () {
-        var all = this.getAllAtoms(),
+        var all = this.atoms,
             hetatm = this.getHetatms(all).filter(isNotSolvent);
 
-        this.colorByAtom(all, {});
-        this.colorByChain(all);
+        var options = this.options || {
+            colorBy: "chain",
+            mainChainAs: "thick ribbon",
+            doNotSmoothen: false,
+            sideChainAsLines: "true",
+            nonBondedAs: "stars",
+            hetatmsAs: "ball and stick",
+            // --
+            //
+            //unitCell: true,
+            //biologicalAssembly: true,
+            //crystalPacking: true,
+            //labelCA: true,
+        };
 
-        this.drawAtomsAsSphere(this.modelGroup, hetatm, this.sphereRadius);
-        this.drawMainchainCurve(this.modelGroup, all, this.curveWidth, 'P');
-        this.drawCartoon(this.modelGroup, all, this.curveWidth);
+        console.log(options);
+
+        this.colorByAtom(all, {});
+
+        switch (options.colorBy) {
+        case "spectrum":
+            this.colorChainbow(all);
+            break;
+        case "secondary structure":
+            this.colorByStructure(all, 0xcc00cc, 0x00cccc);
+            break;
+        case "B factor":
+            this.colorByBFactor(all);
+            break;
+        case "polar/nonpolar":
+            this.colorByPolarity(all, 0xcc0000, 0xcccccc);
+            break;
+        case "chain":
+        default:
+            this.colorByChain(all);
+            break;
+        }
+
+        var doNotSmoothen = options.doNotSmoothen || false;
+
+        switch (options.mainChainAs) {
+        case "thin ribbon":
+            this.drawCartoon(this.modelGroup, all, doNotSmoothen);
+            this.drawCartoonNucleicAcid(this.modelGroup, all);
+            break;
+        case "strand":
+            this.drawStrand(this.modelGroup, all, null, null, null, null, null, doNotSmoothen);
+            this.drawStrandNucleicAcid(this.modelGroup, all);
+            break;
+        case "cylinder and plate":
+            this.drawHelixAsCylinder(this.modelGroup, all, 1.6);
+            this.drawCartoonNucleicAcid(this.modelGroup, all);
+            break;
+        case "C alpha trace":
+            this.drawMainchainCurve(this.modelGroup, all, this.curveWidth, 'CA', 1);
+            this.drawMainchainCurve(this.modelGroup, all, this.curveWidth, 'O3\'', 1);
+            break;
+        case "B factor Tube":
+            this.drawMainchainTube(this.modelGroup, all, 'CA');
+            this.drawMainchainTube(this.modelGroup, all, 'O3\''); // FIXME: 5' end problem!
+            break;
+        case "bonds":
+            this.drawBondsAsLine(this.modelGroup, all, this.lineWidth);
+            break;
+        case "thick ribbon":
+        default:
+            this.drawCartoon(this.modelGroup, all, doNotSmoothen, this.thickness);
+            this.drawCartoonNucleicAcid(this.modelGroup, all, null, this.thickness);
+            break;
+        }
+
+        if (options.sideChainAsLines) {
+            this.drawBondsAsLine(this.modelGroup, this.getSidechains(all), this.lineWidth);
+        }
+
+        
+        if (options.mainChainAs) {
+            var allHet = this.getHetatms(all);
+            var nonBonded = this.getNonbonded(allHet);
+            switch (options.mainChainAs) {
+            case "stars":
+                this.drawAsCross(target, nonBonded, 0.3, true);
+                break;
+            case "spheres":
+                this.drawAtomsAsIcosahedron(target, nonBonded, 0.3, true);
+                break;
+            }
+
+        }
+        var asu = new THREE.Object3D();
+
+        switch (options.hetatmsAs) {
+            case "sticks":
+                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius, this.cylinderRadius, true);
+                this.drawCartoon(this.modelGroup, all, this.curveWidth, this.thickness);
+                break;
+            case "ball and stick":
+                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, false, 0.3);
+                break;
+            case "ball and stick multiple":
+                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, true, 0.3);
+                break;
+            case "spheres":
+                this.drawAtomsAsSphere(this.modelGroup, hetatm, this.sphereRadius);
+                break;
+            case "icosahedrons":
+                this.drawAtomsAsIcosahedron(this.modelGroup, hetatm, this.sphereRadius);
+                break;
+            case "lines":
+                this.drawBondsAsLine(this.modelGroup, hetatm, this.curveWidth);
+                break;
+        }
+
+        if (options.unitCell) {
+            this.drawUnitcell(this.modelGroup);
+        }
+
+        //var asu = this.modelGroup;
+        //if (options.biologicalAssembly) {
+            //this.drawSymmetryMates2(this.modelGroup, asu, this.protein.biomtMatrices);
+        //}
+
+        //if (options.crystalPacking) {
+            //this.drawSymmetryMatesWithTranslation2(this.modelGroup, asu, this.protein.symMat);
+        //}
+        if (options.labelCA) {
+            var that = this;
+            this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) { that.labelAtom(CA, CA.resn + "" + CA.resi )  })
+        }
+
+        this.modelGroup.add(asu);
+
     };
 
     GLmol.prototype.getView = function () {
@@ -2259,66 +2383,68 @@
         });
         glDOM.on("contextmenu", function (ev) { ev.preventDefault(); });
         $("body").on('mouseup touchend', function (ev) {
-            var x,
-                y,
-                dx,
-                dy,
-                r,
-                mvMat,
-                pmvMat,
-                pmvMatInv,
-                nearest,
-                i,
-                atom,
-                v,
-                r2,
-                tx,
-                ty,
-                ilim,
-                bb;
             me.isDragging = false;
-
-            me.adjustPos(ev);
-            x = ev.x;
-            y = ev.y;
-            if (!x) {
-                return;
-            }
-            dx = x - me.mouseStartX;
-            dy = y - me.mouseStartY;
-            r = Math.sqrt(dx * dx + dy * dy);
-            if (r > 2) {
-                return;
-            }
-            x -= me.container.position().left;
-            y -= me.container.position().top;
-
-
-            mvMat = new THREE.Matrix4().multiply(me.camera.matrixWorldInverse, me.modelGroup.matrixWorld);
-            pmvMat = new THREE.Matrix4().multiply(me.camera.projectionMatrix, mvMat);
-            pmvMatInv = new THREE.Matrix4().getInverse(pmvMat);
-            tx = x / me.WIDTH * 2 - 1;
-            ty = 1 - y / me.HEIGHT * 2;
-            nearest = [1, {}, new TV3(0, 0, 1000)];
-            for (i = 0, ilim = me.atoms.length; i < ilim; i++) {
-                atom = me.atoms[i];
-                if (!atom) { continue; }
-                if (atom.resn === "HOH") { continue; }
-
-                v = new TV3(atom.x, atom.y, atom.z);
-                pmvMat.multiplyVector3(v);
-                r2 = (v.x - tx) * (v.x - tx) + (v.y - ty) * (v.y - ty);
-                if (r2 > 0.0005) { continue; }
-                if (v.z < nearest[2].z) { nearest = [r2, atom, v]; }
-                if (r2 > 0.0002) { continue; }
-                if (r2 < nearest[0]) { nearest = [r2, atom, v]; }
-            }
-            atom = nearest[1];
-            if (!atom) { return; }
-
-            var label = [atom.chain, atom.resn, atom.resi].join(":");
-            var bla = me.labelAtom(atom, label);
         });
+            //var x,
+                //y,
+                //dx,
+                //dy,
+                //r,
+                //mvMat,
+                //pmvMat,
+                //pmvMatInv,
+                //nearest,
+                //i,
+                //atom,
+                //v,
+                //r2,
+                //tx,
+                //ty,
+                //ilim,
+                //bb;
+            //me.isDragging = false;
+
+            //me.adjustPos(ev);
+            //x = ev.x;
+            //y = ev.y;
+            //if (!x) {
+                //return;
+            //}
+            //dx = x - me.mouseStartX;
+            //dy = y - me.mouseStartY;
+            //r = Math.sqrt(dx * dx + dy * dy);
+            //if (r > 2) {
+                //return;
+            //}
+            //x -= me.container.position().left;
+            //y -= me.container.position().top;
+
+
+            //mvMat = new THREE.Matrix4().multiply(me.camera.matrixWorldInverse, me.modelGroup.matrixWorld);
+            //pmvMat = new THREE.Matrix4().multiply(me.camera.projectionMatrix, mvMat);
+            //pmvMatInv = new THREE.Matrix4().getInverse(pmvMat);
+            //tx = x / me.WIDTH * 2 - 1;
+            //ty = 1 - y / me.HEIGHT * 2;
+            //nearest = [1, {}, new TV3(0, 0, 1000)];
+            //for (i = 0, ilim = me.atoms.length; i < ilim; i++) {
+                //atom = me.atoms[i];
+                //if (!atom) { continue; }
+                //if (atom.resn === "HOH") { continue; }
+
+                //v = new TV3(atom.x, atom.y, atom.z);
+                //pmvMat.multiplyVector3(v);
+                //r2 = (v.x - tx) * (v.x - tx) + (v.y - ty) * (v.y - ty);
+                //if (r2 > 0.0005) { continue; }
+                //if (v.z < nearest[2].z) { nearest = [r2, atom, v]; }
+                //if (r2 > 0.0002) { continue; }
+                //if (r2 < nearest[0]) { nearest = [r2, atom, v]; }
+            //}
+            //atom = nearest[1];
+            //if (!atom) { return; }
+
+            //var label = [atom.chain, atom.resn, atom.resi].join(":");
+            //var bla = me.labelAtom(atom, label);
+        //});
 
         glDOM.on('mousemove touchmove', function (ev) { // touchmove
             var mode = 0,

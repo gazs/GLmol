@@ -3341,25 +3341,13 @@ END
 //-View/Side chains as lines (pipa)
 //-View/Small molecules(HETATMs) as sticks
 var glmol01 = new GLmol('glmol01', true);
-glmol01.defineRepresentation = function() {
-   var all = this.atoms;
-   var hetatm = this.removeSolvents(this.getHetatms(all));
+glmol01.options = {
+  colorBy: "chain",
+  sideChainAsLines: true,
+  hetatmsAs: "sticks",
+  labelCA: true
 
-   this.colorByAtom(all, {});
-
-   this.colorByChain(all); // color by chain
-   var asu = new THREE.Object3D();
-   this.drawBondsAsLine(asu, this.getSidechains(all), this.lineWidth); // sidechains as lines
-
-   this.drawBondsAsStick(asu, hetatm, this.cylinderRadius, this.cylinderRadius, true); //hetatm sticks
-   this.drawCartoon(asu, all, this.curveWidth, this.thickness);
-
-   that = this;
-   this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) { that.labelAtom(CA, CA.resn)  })
-
-//   this.drawSymmetryMates2(this.modelGroup, asu, this.protein.biomtMatrices);
-   this.modelGroup.add(asu);
-};
+}
 
 glmol01.loadMolecule();
 </script>

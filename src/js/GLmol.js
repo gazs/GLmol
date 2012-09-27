@@ -2174,8 +2174,10 @@
             //this.drawSymmetryMatesWithTranslation2(this.modelGroup, asu, this.protein.symMat);
         //}
         if (options.labelCA) {
+            console.time("labelCA")
             var that = this;
             this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) { that.labelAtom(CA, CA.resn + "" + CA.resi )  })
+            console.timeEnd("labelCA")
         }
 
         this.modelGroup.add(asu);

@@ -45,7 +45,7 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
         extent = this.getExtent(atomsToShow);
         expandedExtent = [[extent[0][0] - 4, extent[0][1] - 4, extent[0][2] - 4],
                           [extent[1][0] + 4, extent[1][1] + 4, extent[1][2] + 4]];
-        extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.getAllAtoms(), expandedExtent));
+        extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.atoms, expandedExtent));
         this.meshType = type;
 
         ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
@@ -72,16 +72,16 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
 };
 
 
-this.addEventListener('message', function(e) {
-    var expandedExtent = e.data[0],
-        type = e.data[1],
-        atoms = e.data[2],
-        extendedAtoms = e.data[3],
-        atomsToShow = e.data[4];
-    ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-    worker.postMessage( ps.getModel(atoms, atomsToShow) )
+//this.addEventListener('message', function(e) {
+    //var expandedExtent = e.data[0],
+        //type = e.data[1],
+        //atoms = e.data[2],
+        //extendedAtoms = e.data[3],
+        //atomsToShow = e.data[4];
+    //ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+    //worker.postMessage( ps.getModel(atoms, atomsToShow) )
 
-});
+//});
 
 function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
     this.initparm(expandedExtent, (type === ProteinSurface.VDW) ? false : true);
@@ -116,8 +116,6 @@ ProteinSurface.prototype.pWidth = undefined;
 ProteinSurface.prototype.pLength = undefined;
 ProteinSurface.prototype.cutRadius = undefined;
 ProteinSurface.prototype.vp = undefined;
-ProteinSurface.prototype.vertnumber = undefined;
-ProteinSurface.prototype.facenumber = undefined;
 ProteinSurface.prototype.pminx = undefined;
 ProteinSurface.prototype.pminy = undefined;
 ProteinSurface.prototype.pminz = undefined;
@@ -152,14 +150,14 @@ ProteinSurface.prototype.getModel = function (atoms, atomlist) {
         a,
         b,
         c;
-    console.log("all vertices & faces", this.vertnumber, this.facenumber);
+    console.log("all vertices & faces", this.verts.length, this.faces.length);
 
     atomsToShow = {};
 
     for (i = 0, lim = atomlist.length; i < lim; i++) {
-        atomsToShow[atomlist[i]] = true;
+        atomsToShow[i] = true;
     }
-    for (i = 0; i < this.vertnumber; i++) {
+    for (i = 0; i < this.verts.length; i++) {
         vertices[i].x = vertices[i].x / scaleFactor - ptranx;
         vertices[i].y = vertices[i].y / scaleFactor - ptrany;
         vertices[i].z = vertices[i].z / scaleFactor - ptranz;
@@ -167,7 +165,7 @@ ProteinSurface.prototype.getModel = function (atoms, atomlist) {
     }
 
     geo.vertices = v;
-    for (i = 0; i < this.facenumber; i++) {
+    for (i = 0; i < this.faces.length; i++) {
         f = this.faces[i];
         a = vertices[f.a].atomid;
         b = vertices[f.b].atomid;
@@ -186,31 +184,30 @@ ProteinSurface.prototype.getModel = function (atoms, atomlist) {
 };
 
 ProteinSurface.prototype.laplaciansmooth = function (numiter) {
-    var tps = new Array(this.vertnumber),
+    var tps = new Array(this.verts.length),
         i,
         j,
         k,
         vertdeg = new Array(20),
         faces = this.faces,
         verts = this.verts,
-        vertnumber = this.vertnumber,
         flagvert,
         wt = 1.00,
         wt2 = 0.50,
         ssign,
         outwt = 0.75 / (this.scaleFactor + 3.5); //area-preserving
 
-    for (i = 0; i < this.vertnumber; i++) {
+    for (i = 0; i < this.verts.length; i++) {
         tps[i] = {x: 0, y: 0, z: 0};
     }
     for (i = 0; i < 20; i++) {
-        vertdeg[i] = new Array(vertnumber);
+        vertdeg[i] = new Array(verts.length);
     }
 
-    for (i = 0; i < this.vertnumber; i++) {
+    for (i = 0; i < this.verts.length; i++) {
         vertdeg[0][i] = 0;
     }
-    for (i = 0; i < this.facenumber; i++) {
+    for (i = 0; i < this.faces.length; i++) {
         flagvert = true;
         for (j = 0; j < vertdeg[0][faces[i].a]; j++) {
             if (faces[i].b === vertdeg[j + 1][faces[i].a]) {
@@ -285,7 +282,7 @@ ProteinSurface.prototype.laplaciansmooth = function (numiter) {
     }
 
     for (k = 0; k < numiter; k++) {
-        for (i = 0; i < vertnumber; i++) {
+        for (i = 0; i < verts.length; i++) {
             if (vertdeg[0][i] < 3) {
                 tps[i].x = verts[i].x;
                 tps[i].y = verts[i].y;
@@ -322,13 +319,13 @@ ProteinSurface.prototype.laplaciansmooth = function (numiter) {
                 tps[i].z /= wt + vertdeg[0][i];
             }
         }
-        for (i = 0; i < vertnumber; i++) {
+        for (i = 0; i < verts.length; i++) {
             verts[i].x = tps[i].x;
             verts[i].y = tps[i].y;
             verts[i].z = tps[i].z;
         }
        /*	computenorm();
-        for (var i = 0; i < vertnumber; i++) {
+        for (var i = 0; i < verts.length; i++) {
             if (verts[i].inout) ssign = 1;
             else ssign = -1;
             verts[i].x += ssign * outwt * verts[i].pn.x;
@@ -463,7 +460,7 @@ ProteinSurface.prototype.fillvoxels = function (atoms, atomlist) { //(int seqini
 
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
-            atom = atoms[atomlist[i]];
+            atom = atomlist[i];
             if (!atom || atom.hetflag) { continue; }
             this.fillAtom(atom, atoms);
         }
@@ -610,7 +607,7 @@ ProteinSurface.prototype.fillvoxelswaals = function (atoms, atomlist) {
 
     for (i in atomlist) {
         if (atomlist.hasOwnProperty(i)) {
-            atom = atoms[atomlist[i]];
+            atom = atomlist[i];
             if (!atom || atom.hetflag) {
                 continue;
             }
@@ -1075,8 +1072,6 @@ ProteinSurface.prototype.marchingcube = function (stype) {
         j,
         b,
         k,
-        vertnumber = 0,
-        facenumber = 0,
         verts = [],
         faces = [],
         sumtype,
@@ -1145,15 +1140,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     tp[3][2] = k + 1;
                     for (ii = 0; ii < 4; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]]));
-                    facenumber++;
+                    
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
+                    
                 } else if ((vp000 && vp010 && vp011) || (vp010 && vp011 && vp001) || (vp011 && vp001 && vp000) || (vp001 && vp000 && vp010)) {
                     if (vp000 && vp010 && vp011) {
                         tp[0][0] = i;
@@ -1200,13 +1195,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     }
                     for (ii = 0; ii < 3; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]]));
-                    facenumber++;
+                    
                 }
             }
         }
@@ -1236,15 +1231,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     tp[3][2] = k + 1;
                     for (ii = 0; ii < 4; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]],  vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
+                    
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]],  vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                    facenumber++;
+                    
                 } else if ((vp000 && vp100 && vp101) || (vp100 && vp101 && vp001) || (vp101 && vp001 && vp000) || (vp001 && vp000 && vp100)) {
                     if (vp000 && vp100 && vp101) {
                         tp[0][0] = i;
@@ -1291,13 +1286,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     }
                     for (ii = 0; ii < 3; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]],  vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
+                    
                 }
             }
         }
@@ -1328,15 +1323,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
 
                     for (ii = 0; ii < 4; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]],  vertseq[tp[1][0]][tp[1][1]][tp[1][2]]));
-                    facenumber++;
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
                 } else if ((vp000 && vp100 && vp110)
                         || (vp100 && vp110 && vp010)
                         || (vp110 && vp010 && vp000)
@@ -1385,13 +1378,12 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     }
                     for (ii = 0; ii < 3; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]],  vertseq[tp[1][0]][tp[1][1]][tp[1][2]]));
-                    facenumber++;
                 }
             }
         }
@@ -1421,15 +1413,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     tp[3][2] = k + 1;
                     for (ii = 0; ii < 4; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]],  vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]],  vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                    facenumber++;
                 } else if ((vp000 && vp010 && vp011)
                             || (vp010 && vp011 && vp001)
                             || (vp011 && vp001 && vp000)
@@ -1477,13 +1467,12 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     }
                     for (ii = 0; ii < 3; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]],  vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
                 }
             }
         }
@@ -1513,15 +1502,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     tp[3][2] = k + 1;
                     for (ii = 0; ii < 4; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]]));
-                    facenumber++;
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
                 } else if ((vp000 && vp100 && vp101) || (vp100 && vp101 && vp001) || (vp101 && vp001 && vp000) || (vp001 && vp000 && vp100)) {
                     if (vp000 && vp100 && vp101) {
                         tp[0][0] = i;
@@ -1566,13 +1553,12 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     }
                     for (ii = 0; ii < 3; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]]));
-                    facenumber++;
                 }
 
             }
@@ -1603,15 +1589,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     tp[3][2] = k;
                     for (ii = 0; ii < 4; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                    facenumber++;
                 } else if ((vp000 && vp100 && vp110)
                                || (vp100 && vp110 && vp010)
                                || (vp110 && vp010 && vp000)
@@ -1659,13 +1643,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     }
                     for (ii = 0; ii < 3; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
+                    
                 }
             }
         }
@@ -1964,13 +1948,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//64
                         for (ii = 0; ii < 3; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                     }//no5 24
                 //total3
                 } else if (sumtype === 4) { // CHECK
@@ -2061,15 +2045,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }
                         for (ii = 0; ii < 4; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                     //no.8 6
                     } else if ((vp000 && vp100 && vp110  && vp011)//11
                                  || (vp000 && vp010 && vp110 && vp101)//12
@@ -2338,13 +2322,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }
                         for (ii = 0; ii < 3; ii++) { //64
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                     } else if ((vp000 && vp011 && vp110 && vp010)//no12 24
                                 || (vp000 && vp100 && vp110 && vp101)
                                 || (vp000 && vp001 && vp100 && vp010)
@@ -2436,13 +2420,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//8
                         for (ii = 0; ii < 3; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                     // no.9 8
                     } else if ((vp000 && vp100 && vp110 && vp001)
                                  || (vp010 && vp100 && vp110 && vp101)
@@ -2615,15 +2599,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         } //12
                         for (ii = 0; ii < 4; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                     //no.11 12
                     } else if ((vp000 && vp100 && vp010 && vp101)
                                  || (vp000 && vp100 && vp110 && vp111)
@@ -2796,15 +2780,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//12
                         for (ii = 0; ii < 4; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                     }//no.14 12
                     //total4
                 } else if (sumtype === 5) {
@@ -2921,13 +2905,13 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//8
                         for (ii = 0; ii < 3; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                     //no.7 8
                     } else if ((!vp000 && !vp100 && !vp110)
                              || (!vp000 && !vp010 && !vp110)
@@ -3364,15 +3348,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }
                         for (ii = 0; ii < 4; ii++) { //64
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                     } else if ((!vp000 && !vp100 && !vp111)//1 //no5 24
                                  || (!vp010 && !vp110 && !vp001)//2
                                  || (!vp011 && !vp111 && !vp100)//3
@@ -3585,17 +3569,17 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//12
                         for (ii = 0; ii < 5; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[4][0]][tp[4][1]][tp[4][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                     //no.6 12-1
                     } else if ((!vp000 && !vp100 && !vp011)//1
                              || (!vp010 && !vp110 && !vp101)//2
@@ -3863,17 +3847,17 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//12
                         for (ii = 0; ii < 5; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[4][0]][tp[4][1]][tp[4][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]]));
-                        facenumber++;
+                        
                     }//no.6 12-2
                 //total5
                 } else if (sumtype === 6) {
@@ -4096,15 +4080,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//12
                         for (ii = 0; ii < 4; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                     //no.2 12	
                     } else if ((!vp000 && !vp111)
                                  || (!vp100 && !vp011)
@@ -4213,15 +4197,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         } // 4
                         for (ii = 0; ii < 6; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[3][0]][tp[3][1]][tp[3][2]], vertseq[tp[4][0]][tp[4][1]][tp[4][2]], vertseq[tp[5][0]][tp[5][1]][tp[5][2]]));
-                        facenumber++;
+                        
                     //no.4 4
                     } else if ((!vp000 && !vp101)
                                  || (!vp100 && !vp001)
@@ -4442,15 +4426,15 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                         }//12
                         for (ii = 0; ii < 4; ii++) {
                             if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                                vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                                 verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                                vertnumber++;
+                                
                             }
                         }
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                        facenumber++;
+                        
                         faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]], vertseq[tp[3][0]][tp[3][1]][tp[3][2]]));
-                        facenumber++;
+                        
                     }//no.3 12
                 //total6 
                 } else if (sumtype === 7) {
@@ -4558,22 +4542,20 @@ ProteinSurface.prototype.marchingcube = function (stype) {
                     }//8
                     for (ii = 0; ii < 3; ii++) {
                         if (vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] === -1) {
-                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = vertnumber;
+                            vertseq[tp[ii][0]][tp[ii][1]][tp[ii][2]] = verts.length;
                             verts.push(new THREE.Vector3(tp[ii][0], tp[ii][1], tp[ii][2]));
-                            vertnumber++;
+                            
                         }
                     }
                     faces.push(new THREE.Face3(vertseq[tp[0][0]][tp[0][1]][tp[0][2]], vertseq[tp[1][0]][tp[1][1]][tp[1][2]], vertseq[tp[2][0]][tp[2][1]][tp[2][2]]));
-                    facenumber++;
+                    
                 }//total7
             }//every ijk
         }//j
     }//i
     this.faces = faces;
     this.verts = verts;
-    this.vertnumber = vertnumber;
-    this.facenumber = facenumber;
-    for (i = 0; i < vertnumber; i++) {
+    for (i = 0; i < verts.length; i++) {
         this.verts[i].atomid = this.vp[verts[i].x * pWidth * pHeight + pHeight * verts[i].y + verts[i].z].atomid;
     }
 };

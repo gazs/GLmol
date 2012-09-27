@@ -2063,7 +2063,8 @@
             //labelCA: true,
         };
 
-        console.log(options);
+        //console.log(options);
+        var asu = new THREE.Object3D();
 
         this.colorByAtom(all, {});
 
@@ -2090,37 +2091,37 @@
 
         switch (options.mainChainAs) {
         case "thin ribbon":
-            this.drawCartoon(this.modelGroup, all, doNotSmoothen);
-            this.drawCartoonNucleicAcid(this.modelGroup, all);
+            this.drawCartoon(asu, all, doNotSmoothen);
+            this.drawCartoonNucleicAcid(asu, all);
             break;
         case "strand":
-            this.drawStrand(this.modelGroup, all, null, null, null, null, null, doNotSmoothen);
-            this.drawStrandNucleicAcid(this.modelGroup, all);
+            this.drawStrand(asu, all, null, null, null, null, null, doNotSmoothen);
+            this.drawStrandNucleicAcid(asu, all);
             break;
         case "cylinder and plate":
-            this.drawHelixAsCylinder(this.modelGroup, all, 1.6);
-            this.drawCartoonNucleicAcid(this.modelGroup, all);
+            this.drawHelixAsCylinder(asu, all, 1.6);
+            this.drawCartoonNucleicAcid(asu, all);
             break;
         case "C alpha trace":
-            this.drawMainchainCurve(this.modelGroup, all, this.curveWidth, 'CA', 1);
-            this.drawMainchainCurve(this.modelGroup, all, this.curveWidth, 'O3\'', 1);
+            this.drawMainchainCurve(asu, all, this.curveWidth, 'CA', 1);
+            this.drawMainchainCurve(asu, all, this.curveWidth, 'O3\'', 1);
             break;
         case "B factor Tube":
-            this.drawMainchainTube(this.modelGroup, all, 'CA');
-            this.drawMainchainTube(this.modelGroup, all, 'O3\''); // FIXME: 5' end problem!
+            this.drawMainchainTube(asu, all, 'CA');
+            this.drawMainchainTube(asu, all, 'O3\''); // FIXME: 5' end problem!
             break;
         case "bonds":
-            this.drawBondsAsLine(this.modelGroup, all, this.lineWidth);
+            this.drawBondsAsLine(asu, all, this.lineWidth);
             break;
         case "thick ribbon":
         default:
-            this.drawCartoon(this.modelGroup, all, doNotSmoothen, this.thickness);
-            this.drawCartoonNucleicAcid(this.modelGroup, all, null, this.thickness);
+            this.drawCartoon(asu, all, doNotSmoothen, this.thickness);
+            this.drawCartoonNucleicAcid(asu, all, null, this.thickness);
             break;
         }
 
         if (options.sideChainAsLines) {
-            this.drawBondsAsLine(this.modelGroup, this.getSidechains(all), this.lineWidth);
+            this.drawBondsAsLine(asu, this.getSidechains(all), this.lineWidth);
         }
 
         
@@ -2137,27 +2138,26 @@
             }
 
         }
-        var asu = new THREE.Object3D();
 
         switch (options.hetatmsAs) {
             case "sticks":
-                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius, this.cylinderRadius, true);
-                this.drawCartoon(this.modelGroup, all, this.curveWidth, this.thickness);
+             this.drawBondsAsStick(asu, hetatm, this.cylinderRadius, this.cylinderRadius, true); //hetatm sticks
+             this.drawCartoon(asu, all, this.curveWidth, this.thickness);
                 break;
             case "ball and stick":
-                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, false, 0.3);
+                this.drawBondsAsStick(asu, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, false, 0.3);
                 break;
             case "ball and stick multiple":
-                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, true, 0.3);
+                this.drawBondsAsStick(asu, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, true, 0.3);
                 break;
             case "spheres":
-                this.drawAtomsAsSphere(this.modelGroup, hetatm, this.sphereRadius);
+                this.drawAtomsAsSphere(asu, hetatm, this.sphereRadius);
                 break;
             case "icosahedrons":
-                this.drawAtomsAsIcosahedron(this.modelGroup, hetatm, this.sphereRadius);
+                this.drawAtomsAsIcosahedron(asu, hetatm, this.sphereRadius);
                 break;
             case "lines":
-                this.drawBondsAsLine(this.modelGroup, hetatm, this.curveWidth);
+                this.drawBondsAsLine(asu, hetatm, this.curveWidth);
                 break;
         }
 

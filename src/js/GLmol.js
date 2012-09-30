@@ -2079,7 +2079,6 @@
             //labelCA: true,
         };
 
-        //console.log(options);
         var asu = new THREE.Object3D();
 
         this.colorByAtom(all, {});
@@ -2182,14 +2181,13 @@
             this.drawUnitcell(this.modelGroup);
         }
 
-        //var asu = this.modelGroup;
-        //if (options.biologicalAssembly) {
-            //this.drawSymmetryMates2(this.modelGroup, asu, this.protein.biomtMatrices);
-        //}
+        if (options.biologicalAssembly) {
+            this.drawSymmetryMates2(this.modelGroup, asu, this.protein.biomtMatrices);
+        }
 
-        //if (options.crystalPacking) {
-            //this.drawSymmetryMatesWithTranslation2(this.modelGroup, asu, this.protein.symMat);
-        //}
+        if (options.crystalPacking) {
+            this.drawSymmetryMatesWithTranslation2(this.modelGroup, asu, this.protein.symMat);
+        }
         if (options.labelCA) {
             console.time("labelCA")
             var that = this;
@@ -2201,7 +2199,7 @@
 
         if (options.proteinSurface) {
             console.log("generating proteinsurface");
-            this.generateMesh(this.modelGroup, glmol01.atoms, options.proteinSurface);
+            this.generateMesh(this.modelGroup, this.atoms, options.proteinSurface);
         }
 
 

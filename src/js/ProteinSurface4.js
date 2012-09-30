@@ -35,6 +35,11 @@ if (!this.console) {
   };
 }
 
+if (typeof importScripts !== 'undefined') {
+   var window = this;
+   importScripts("three.min.js");
+}
+
 
 GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wireframeLinewidth) {
     wireframe = wireframe || false;
@@ -48,40 +53,47 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
         extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.atoms, expandedExtent));
         this.meshType = type;
 
-        ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-        window.ps = ps;
-        this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
-        //var worker = new Worker("js/ProteinSurface4.js");
-        //worker.onmessage = function (event) {
-            //console.log("done");
-            //that.surfaceGeo = event.data;
-        //}
-        //worker.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
+        //ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+        //window.ps = ps;
+        //this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
+        var worker = new SharedWorker("js/ProteinSurface4.js");
+        var that = this;
+        worker.port.onmessage = function (event) {
+            console.log("done");
+            that.surfaceGeo = event.data;
+            mesh = that.getLambertMesh(that.surfaceGeo, {vertexColors: THREE.VertexColors, wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
+            ////mat.opacity = 0.8;
+            ////mat.transparent = true;
+            //mesh.doubleSided = true;
+            group.add(mesh);
+        }
+        worker.port.start()
+
+        //worker.postMessage = worker.webkitPostMessage || worker.postMessage;
+
+        worker.port.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
     }
 
-    mesh = this.getLambertMesh(this.surfaceGeo, {wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
-    //mat = new THREE.MeshLambertMaterial();
-    //mat.vertexColors = THREE.VertexColors;
-    //mat.wireframe = wireframe;
-    //mat.wireframeLinewidth = wireframeLinewidth;
-    ////mat.opacity = 0.8;
-    ////mat.transparent = true;
-    //mesh = new THREE.Mesh(this.surfaceGeo, mat);
-    //mesh.doubleSided = true;
-    group.add(mesh);
 };
 
 
-//this.addEventListener('message', function(e) {
-    //var expandedExtent = e.data[0],
-        //type = e.data[1],
-        //atoms = e.data[2],
-        //extendedAtoms = e.data[3],
-        //atomsToShow = e.data[4];
-    //ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-    //worker.postMessage( ps.getModel(atoms, atomsToShow) )
+this.addEventListener('connect', function(e) {
+    var port = e.ports[0];  
+    port.addEventListener('message', function(e) {
+        var expandedExtent = e.data[0],
+            type = e.data[1],
+            atoms = e.data[2],
+            extendedAtoms = e.data[3],
+            atomsToShow = e.data[4];
+        var ps = new ProteinSurface(expandedExtent, type, atoms, extendedAtoms);
 
-//});
+
+        port.postMessage( ps.getModel(atoms, atomsToShow) )
+
+    });
+
+});
+
 
 function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
     this.initparm(expandedExtent, (type === ProteinSurface.VDW) ? false : true);
@@ -481,6 +493,22 @@ ProteinSurface.prototype.fillvoxels = function (atoms, atomlist) { //(int seqini
 };
 
 ProteinSurface.prototype.getAtomType = function (atom) {
+  //atom = {
+    //'CA': 0,
+    //'C': 1,
+    //'0', 3,
+    //'N': 2,
+    //'FE': 9,
+    //'H': 5
+  //}
+  //elem = {
+    //'C': 1,
+    //'O': 11,
+    //'N': 8,
+    //'S': 4,
+    //'P': 6,
+    //'H': 1,
+  //}
     var at = 10;
     if (atom.atom === 'CA') {
         at = 0;

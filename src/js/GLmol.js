@@ -2283,9 +2283,9 @@
         this.loadMoleculeStr(repressZoom, source);
 
         var that = this;
-        var controls = new THREE.TrackballControls(this.camera, this.renderer.DOMElement);
+        this.controls = new THREE.TrackballControls(this.camera, this.renderer.DOMElement);
         function render(){
-          controls.update();
+          that.controls.update();
           that.show();
         }
 

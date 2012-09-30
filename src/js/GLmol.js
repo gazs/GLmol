@@ -1068,11 +1068,14 @@
                         radii = [];
                     }
                     points.push(new TV3(atom.x, atom.y, atom.z));
-                    if (radius) {
-                        radii.push((atom.b > 0) ? atom.b / 100 : 0.3);
-                    } else {
-                        radii.push(radius);
-                    }
+
+                    radius = radius || (atom.b > 0) ? atom.b / 100 : 0.3;
+                    radii.push(radius);
+                    //if (!radius) {
+                        //radii.push((atom.b > 0) ? atom.b / 100 : 0.3);
+                    //} else {
+                        //radii.push(radius);
+                    //}
 
                     colors.push(atom.color);
                     currentChain = atom.chain;

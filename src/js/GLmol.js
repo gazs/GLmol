@@ -361,9 +361,22 @@
 
                 hetflag = line[0] === 'H';
 
-                atoms[serial] = {'resn': resn, 'x': x, 'y': y, 'z': z, 'elem': elem,
-                                 'hetflag': hetflag, 'chain': chain, 'resi': resi, 'serial': serial, 'atom': atom,
-                                 'bonds': [], 'ss': 'c', 'color': 0xFFFFFF, 'bondOrder': [], 'b': b /*', altLoc': altLoc*/};
+                atoms[serial] = {'resn': resn, 
+                                 'x': x,
+                                 'y': y,
+                                 'z': z,
+                                 'elem': elem,
+                                 'hetflag': hetflag, 
+                                 'chain': chain, 
+                                 'resi': resi, 
+                                 'serial': serial, 
+                                 'atom': atom,
+                                 'bonds': [], 
+                                 'ss': 'c',
+                                 'color': 0xFFFFFF,
+                                 'bondOrder': [],
+                                 'b': b
+                               /*', altLoc': altLoc*/};
             } else if (recordName === 'SHEET ') {
                 startChain = line.substr(21, 1);
                 startResi = parseInt(line.substr(22, 4), 10);
@@ -1269,12 +1282,12 @@
             points[k] = [];
         }
 
-        atomlist = atomlist.filter(isNotUndefined);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
 
-                if ((atom.atom === 'O' || atom.atom === 'CA') && !atom.hetflag) {
+                if (atom.atom === 'O' || atom.atom === 'CA') {
                     if (atom.atom === 'CA') {
                         if (currentChain !== atom.chain || currentResi + 1 !== atom.resi) {
                             for (j = 0; !thickness && j < num; j++) {
@@ -1529,13 +1542,13 @@
             points[k] = [];
         }
 
-        atomlist = atomlist.filter(isNotUndefined);
+        atomlist = atomlist.filter(isNotUndefined).filter(noHetflag);
 
         for (i in atomlist) {
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
 
-                if ((atom.atom === 'O3\'' || atom.atom === 'OP2') && !atom.hetflag) {
+                if (atom.atom === 'O3\'' || atom.atom === 'OP2') {
                     if (atom.atom === 'O3\'') { // to connect 3' end. FIXME: better way to do?
                         if (currentChain !== atom.chain || currentResi + 1 !== atom.resi) {
                             if (currentO3) {
@@ -1915,7 +1928,7 @@
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
 
-                if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'')) {
+                if (colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'') {
                     cnt++;
                 }
             }
@@ -1928,7 +1941,7 @@
             if (atomlist.hasOwnProperty(i)) {
                 atom = atomlist[i];
 
-                if ((colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'')) {
+                if (colorSidechains || atom.atom !== 'CA' || atom.atom !== 'O3\'') {
                     color = new TCo(0);
                     color.setHSV(240.0 / 360 * (1 - cnt / total), 1, 0.9);
                     atom.color = color.getHex();

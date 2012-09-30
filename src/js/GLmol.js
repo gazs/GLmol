@@ -110,13 +110,13 @@
         this.currentModelPos = 0;
         this.cz = 0;
 
-        this.enableMouse(); // TODO: think about using default THREE.js controls
+        //this.enableMouse(); // TODO: think about using default THREE.js controls
 
         if (!suppressAutoload) {
             this.loadMolecule();
         }
-    };
 
+    };
     GLmol.prototype.Nucleotides = ['  G', '  A', '  T', '  C', '  U', ' DG', ' DA', ' DT', ' DC', ' DU'];
     GLmol.prototype.ElementColors = {
         "H": 0xCCCCCC,
@@ -2281,6 +2281,19 @@
         //var source = document.querySelector(this.queryselector + '_src').innerHTML;
         var source = $(this.queryselector + '_src').val();
         this.loadMoleculeStr(repressZoom, source);
+
+        var that = this;
+        var controls = new THREE.TrackballControls(this.modelGroup, this.renderer.DOMElement);
+        function render(){
+          controls.update();
+          that.show();
+        }
+
+        function animate(){
+          requestAnimationFrame(animate);
+          render();
+        }
+        animate();
     };
 
     GLmol.prototype.loadMoleculeStr = function (repressZoom, source) {

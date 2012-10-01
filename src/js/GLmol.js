@@ -2328,7 +2328,7 @@
             title_elem.innerHTML = titleStr;
         }// jQ's method is more thorough
 
-        this.rebuildScene(true);
+        this.rebuildScene();
 
         if (!repressZoom) {
             this.zoomInto(this.atoms);

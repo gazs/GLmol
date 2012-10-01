@@ -2047,7 +2047,7 @@
         return sprite;
     };
 
-    GLmol.prototype.labelAtom = function (atom, text) {
+    GLmol.prototype.labelAtom = function (atom, text, show) {
         var texture = this.createTextTex(text, 30, "#fff");
         var bb = this.billboard(texture);
         bb.scale.x = texture.image.width / 2000; // FIXME
@@ -2057,7 +2057,9 @@
 
         bb.position.set(atom.x - 1, atom.y + 1, atom.z);
         this.modelGroup.add(bb);
-        this.show();
+        if (show) {
+            this.show();
+        }
     };
 
     GLmol.prototype.defineRepresentation = function () {
@@ -2189,10 +2191,11 @@
             this.drawSymmetryMatesWithTranslation2(this.modelGroup, asu, this.protein.symMat);
         }
         if (options.labelCA) {
-            console.time("labelCA")
+            console.time("labelCA");
             var that = this;
-            this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) { that.labelAtom(CA, CA.resn + "" + CA.resi )  })
-            console.timeEnd("labelCA")
+            this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) { that.labelAtom(CA, CA.resn + "" + CA.resi, false)  })
+            that.show();
+            console.timeEnd("labelCA");
         }
 
         this.modelGroup.add(asu);
@@ -2251,13 +2254,13 @@
     };
 
     GLmol.prototype.rebuildScene = function () {
-        var time = new Date(),
-            view = this.getView();
+        console.time("built scene");
+        var view = this.getView();
         this.initializeScene();
         this.defineRepresentation();
         this.setView(view);
+        console.timeEnd("built scene")
 
-        console.log("built scene in " + (+new Date() - time) + "ms");
     };
 
     GLmol.prototype.zoomInto = function (atomlist, keepSlab) {
@@ -2298,8 +2301,8 @@
     };
 
     GLmol.prototype.loadMoleculeStr = function (repressZoom, source) {
-        var time = new Date(),
-            title_elem = document.querySelector(this.queryselector + '_pdbTitle'),
+        console.time("parsed")
+        var title_elem = document.querySelector(this.queryselector + '_pdbTitle'),
             titleStr = '',
             parser_id,
             parsers = [this.parsePDB2, this.parseSDF, this.parseXYZ];
@@ -2312,7 +2315,7 @@
                 }
             }
         }
-        console.log("parsed in " + (+new Date() - time) + "ms");
+        console.timeEnd("parsed")
 
         if (this.protein.pdbID) {
             titleStr += '<a href="http://www.rcsb.org/pdb/explore/explore.do?structureId=' + this.protein.pdbID + '">' + this.protein.pdbID + '</a>';
@@ -2533,12 +2536,10 @@
             return;
         }
 
-    //
-     //   var time = new Date();
-     //   var time = performance.webkitNow();
+        console.time("rendered");
         this.setSlabAndFog();
         this.renderer.render(this.scene, this.camera);
-    //    console.log("rendered in " + (performance.webkitNow() - time) + "ms");
+        console.timeEnd("rendered");
     };
 
     // For scripting

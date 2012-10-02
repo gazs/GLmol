@@ -41,10 +41,20 @@ if (typeof importScripts !== 'undefined') {
 }
 
 
-GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wireframeLinewidth) {
+GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wireframeLinewidth, async) {
     wireframe = wireframe || false;
     var atomsToShow, extent, expandedExtent, extendedAtoms, ps, mat, mesh;
     wireframeLinewidth = wireframeLinewidth || 1;
+
+    var proteinsurfacedone = function (surfaceGeo) {
+        this.surfaceGeo = surfaceGeo;
+        mesh = this.getLambertMesh(this.surfaceGeo, {vertexColors: THREE.VertexColors, wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
+        ////mat.opacity = 0.8;
+        ////mat.transparent = true;
+        //mesh.doubleSided = true;
+        group.add(mesh);
+    }.bind(this);
+
     if (!this.surfaceGeo || this.meshType !== type) {
         atomsToShow = this.removeSolvents(atomlist);
         extent = this.getExtent(atomsToShow);
@@ -53,25 +63,22 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
         extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.atoms, expandedExtent));
         this.meshType = type;
 
-        //ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-        //window.ps = ps;
-        //this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
-        var worker = new SharedWorker("js/ProteinSurface4.js");
-        var that = this;
-        worker.port.onmessage = function (event) {
-            console.log("done");
-            that.surfaceGeo = event.data;
-            mesh = that.getLambertMesh(that.surfaceGeo, {vertexColors: THREE.VertexColors, wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
-            ////mat.opacity = 0.8;
-            ////mat.transparent = true;
-            //mesh.doubleSided = true;
-            group.add(mesh);
+
+        if (async) {
+            var worker = new SharedWorker("js/ProteinSurface4.js");
+            worker.port.onmessage = function (event) {
+                console.log("done");
+                proteinsurfacedone(event.data);
+            }
+            worker.port.start()
+
+            worker.postMessage = worker.webkitPostMessage || worker.postMessage;
+
+            worker.port.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
+        } else {
+            var ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+            proteinsurfacedone(ps.getModel(this.atoms, atomsToShow));
         }
-        worker.port.start()
-
-        //worker.postMessage = worker.webkitPostMessage || worker.postMessage;
-
-        worker.port.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
     }
 
 };
@@ -86,12 +93,8 @@ this.addEventListener('connect', function(e) {
             extendedAtoms = e.data[3],
             atomsToShow = e.data[4];
         var ps = new ProteinSurface(expandedExtent, type, atoms, extendedAtoms);
-
-
         port.postMessage( ps.getModel(atoms, atomsToShow) )
-
     });
-
 });
 
 

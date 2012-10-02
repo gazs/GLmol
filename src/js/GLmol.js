@@ -115,6 +115,7 @@
         if (!suppressAutoload) {
             this.loadMolecule();
         }
+
     };
 
     GLmol.prototype.Nucleotides = ['  G', '  A', '  T', '  C', '  U', ' DG', ' DA', ' DT', ' DC', ' DU'];
@@ -158,6 +159,7 @@
     GLmol.prototype.aaScale = 1;
     GLmol.prototype.scene = null;
     GLmol.prototype.rotationGroup = null; // which contains modelGroup
+    GLmol.prototype.labelGroup = null; // which contains modelGroup
     GLmol.prototype.modelGroup = null;
     GLmol.prototype.bgColor = 0x000000;
     GLmol.prototype.fov = 20;
@@ -183,17 +185,31 @@
     GLmol.prototype.protein = {sheet: [], helix: [], biomtChains: '', biomtMatrices: [], symMat: [], pdbID: '', title: ''};
     GLmol.prototype.atoms = [];
 
+    GLmol.prototype.onWindowResize = function (e) {
+      //fsElement = document.webkitCurrentFullScreenElement || document.mozFullScreenElement
+        //if (fsElement === this.renderer.domElement) {
+          //this.WIDTH = $(window).width() * this.aaScale;
+          //this.HEIGHT= $(window).height() * this.aaScale;
+        //} else  {
+          this.WIDTH = this.container.width() * this.aaScale;
+          this.HEIGHT = this.container.height() * this.aaScale;
+        //}
+        this.ASPECT = this.WIDTH / this.HEIGHT;
+        this.renderer.setSize(this.WIDTH, this.HEIGHT);
+        this.camera.aspect = this.ASPECT;
+        this.camera.updateProjectionMatrix();
+        this.show();
+    }
     GLmol.prototype.attachResizeEvent = function () {
         var me = this;
-        $(window).resize(function () { // only window can capture resize event
-            me.WIDTH = me.container.width() * me.aaScale;
-            me.HEIGHT = me.container.height() * me.aaScale;
-            me.ASPECT = me.WIDTH / me.HEIGHT;
-            me.renderer.setSize(me.WIDTH, me.HEIGHT);
-            me.camera.aspect = me.ASPECT;
-            me.camera.updateProjectionMatrix();
-            me.show();
-        });
+        $(window).resize(function (e) { // only window can capture resize event
+            this.onWindowResize(e); // needed in fullscreen mode too
+        }.bind(this));
+        $(this.renderer.domElement).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", function (e) {
+            console.log("fullscreen")
+            this.setBackground(0x000);
+            this.onWindowResize(e);
+        }.bind(this));
     };
 
     GLmol.prototype.setupLights = function (scene) {
@@ -554,25 +570,23 @@
     };
 
     GLmol.prototype.drawAtoms = function (geometry, group, atomlist, defaultRadius, forceDefault, scale) {
-
-        var that = this;
         atomlist.filter(isNotUndefined).forEach(function (atom) {
             var sphere,
                 r = defaultRadius;
 
             if (!forceDefault) {
                 scale = scale || 1;
-                r = (that.vdwRadii[atom.elem] || defaultRadius) * scale;
+                r = (this.vdwRadii[atom.elem] || defaultRadius) * scale;
             }
 
-            sphere = that.getLambertMesh(geometry, {color: atom.color});
+            sphere = this.getLambertMesh(geometry, {color: atom.color});
             sphere.scale.x = sphere.scale.y = sphere.scale.z = r;
             sphere.position.x = atom.x;
             sphere.position.y = atom.y;
             sphere.position.z = atom.z;
 
             group.add(sphere);
-        });
+        }.bind(this));
     };
     GLmol.prototype.drawAtomsAsSphere = function (group, atomlist, defaultRadius, forceDefault, scale) {
         var geometry = new THREE.SphereGeometry(1, this.sphereQuality, this.sphereQuality); // r, seg, ring
@@ -1805,10 +1819,9 @@
     };
 
     GLmol.prototype.colorByAtom = function (atomlist, colors) {
-        var that = this;
         atomlist.filter(isNotUndefined).forEach(function (atom) {
-            atom.color = that.ElementColors[atom.elem] || that.defaultColor || colors[atom.elem];
-        });
+            atom.color = this.ElementColors[atom.elem] || this.defaultColor || colors[atom.elem];
+        }.bind(this));
     };
 
 
@@ -2055,7 +2068,8 @@
 
 
 
-        bb.position.set(atom.x - 1, atom.y + 1, atom.z);
+        bb.position.set(atom.x, atom.y, atom.z);
+        //this.labelGroup.add(bb);
         this.modelGroup.add(bb);
         if (show) {
             this.show();
@@ -2192,9 +2206,10 @@
         }
         if (options.labelCA) {
             console.time("labelCA");
-            var that = this;
-            this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) { that.labelAtom(CA, CA.resn + "" + CA.resi, false)  })
-            that.show();
+            this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) {
+                this.labelAtom(CA, CA.resn + "" + CA.resi, false);
+            }.bind(this))
+            this.show();
             console.timeEnd("labelCA");
         }
 
@@ -2248,6 +2263,9 @@
         this.rotationGroup.useQuaternion = true;
         this.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
         this.rotationGroup.add(this.modelGroup);
+
+        this.labelGroup = new THREE.Object3D();
+        this.rotationGroup.add(this.labelGroup);
 
         this.scene.add(this.rotationGroup);
         this.setupLights(this.scene);
@@ -2375,42 +2393,42 @@
     };
 
     GLmol.prototype.enableMouse = function () {
-        var me = this, glDOM = $(this.renderer.domElement);
+        var glDOM = $(this.renderer.domElement);
 
        // TODO: Better touch panel support.
        // Contribution is needed as I don't own any iOS or Android device with WebGL support.
         glDOM.on('mousedown touchstart', function (ev) {
             ev.preventDefault();
-            if (!me.scene) { return; }
-            me.adjustPos(ev);
+            if (!this.scene) { return; }
+            this.adjustPos(ev);
             if (!ev.x) { return; }
-            me.isDragging = true;
-            me.mouseButton = ev.which;
-            me.mouseStartX = ev.x;
-            me.mouseStartY = ev.y;
-            me.cq = me.rotationGroup.quaternion;
-            me.cz = me.rotationGroup.position.z;
-            me.currentModelPos = me.modelGroup.position.clone();
-            me.cslabNear = me.slabNear;
-            me.cslabFar = me.slabFar;
-        });
+            this.isDragging = true;
+            this.mouseButton = ev.which;
+            this.mouseStartX = ev.x;
+            this.mouseStartY = ev.y;
+            this.cq = this.rotationGroup.quaternion;
+            this.cz = this.rotationGroup.position.z;
+            this.currentModelPos = this.modelGroup.position.clone();
+            this.cslabNear = this.slabNear;
+            this.cslabFar = this.slabFar;
+        }.bind(this));
 
         glDOM.on('DOMMouseScroll mousewheel', function (ev) { // Zoom
             ev.preventDefault();
-            if (!me.scene) { return; }
-            var scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
+            if (!this.scene) { return; }
+            var scaleFactor = (this.rotationGroup.position.z - this.CAMERA_Z) * 0.85;
             if (ev.originalEvent.detail) { // Webkit
-                me.rotationGroup.position.z += scaleFactor * ev.originalEvent.detail / 10;
+                this.rotationGroup.position.z += scaleFactor * ev.originalEvent.detail / 10;
             } else if (ev.originalEvent.wheelDelta) { // Firefox
-                me.rotationGroup.position.z -= scaleFactor * ev.originalEvent.wheelDelta / 400;
+                this.rotationGroup.position.z -= scaleFactor * ev.originalEvent.wheelDelta / 400;
             }
-            console.log(ev.originalEvent.wheelDelta, ev.originalEvent.detail, me.rotationGroup.position.z);
-            me.show();
-        });
+            console.log(ev.originalEvent.wheelDelta, ev.originalEvent.detail, this.rotationGroup.position.z);
+            this.show();
+        }.bind(this));
         glDOM.on("contextmenu", function (ev) { ev.preventDefault(); });
         $("body").on('mouseup touchend', function (ev) {
-            me.isDragging = false;
-        });
+            this.isDragging = false;
+        }.bind(this));
             //var x,
                 //y,
                 //dx,
@@ -2428,32 +2446,32 @@
                 //ty,
                 //ilim,
                 //bb;
-            //me.isDragging = false;
+            //this.isDragging = false;
 
-            //me.adjustPos(ev);
+            //this.adjustPos(ev);
             //x = ev.x;
             //y = ev.y;
             //if (!x) {
                 //return;
             //}
-            //dx = x - me.mouseStartX;
-            //dy = y - me.mouseStartY;
+            //dx = x - this.mouseStartX;
+            //dy = y - this.mouseStartY;
             //r = Math.sqrt(dx * dx + dy * dy);
             //if (r > 2) {
                 //return;
             //}
-            //x -= me.container.position().left;
-            //y -= me.container.position().top;
+            //x -= this.container.position().left;
+            //y -= this.container.position().top;
 
 
-            //mvMat = new THREE.Matrix4().multiply(me.camera.matrixWorldInverse, me.modelGroup.matrixWorld);
-            //pmvMat = new THREE.Matrix4().multiply(me.camera.projectionMatrix, mvMat);
+            //mvMat = new THREE.Matrix4().multiply(this.camera.matrixWorldInverse, this.modelGroup.matrixWorld);
+            //pmvMat = new THREE.Matrix4().multiply(this.camera.projectionMatrix, mvMat);
             //pmvMatInv = new THREE.Matrix4().getInverse(pmvMat);
-            //tx = x / me.WIDTH * 2 - 1;
-            //ty = 1 - y / me.HEIGHT * 2;
+            //tx = x / this.WIDTH * 2 - 1;
+            //ty = 1 - y / this.HEIGHT * 2;
             //nearest = [1, {}, new TV3(0, 0, 1000)];
-            //for (i = 0, ilim = me.atoms.length; i < ilim; i++) {
-                //atom = me.atoms[i];
+            //for (i = 0, ilim = this.atoms.length; i < ilim; i++) {
+                //atom = this.atoms[i];
                 //if (!atom) { continue; }
                 //if (atom.resn === "HOH") { continue; }
 
@@ -2469,12 +2487,12 @@
             //if (!atom) { return; }
 
             //var label = [atom.chain, atom.resn, atom.resi].join(":");
-            //var bla = me.labelAtom(atom, label);
-        //});
+            //var bla = this.labelAtom(atom, label);
+        //}.bind(this));
 
         glDOM.on('mousemove touchmove', function (ev) { // touchmove
             var mode = 0,
-                modeRadio = document.querySelectorAll('input[name=' + me.id + '_mouseMode]:checked'),
+                modeRadio = document.querySelectorAll('input[name=' + this.id + '_mouseMode]:checked'),
                 dx,
                 dy,
                 r,
@@ -2488,46 +2506,46 @@
                 y;
 
             ev.preventDefault();
-            if (!me.scene) { return; }
-            if (!me.isDragging) { return; }
+            if (!this.scene) { return; }
+            if (!this.isDragging) { return; }
             if (modeRadio.length > 0) { mode = parseInt(modeRadio.val(), 10); }
 
-            me.adjustPos(ev);
+            this.adjustPos(ev);
             x = ev.x;
             y = ev.y;
             if (!x) { return; }
-            dx = (x - me.mouseStartX) / me.WIDTH;
-            dy = (y - me.mouseStartY) / me.HEIGHT;
+            dx = (x - this.mouseStartX) / this.WIDTH;
+            dy = (y - this.mouseStartY) / this.HEIGHT;
             r = Math.sqrt(dx * dx + dy * dy);
-            if (mode === 3 || (me.mouseButton === 3 && ev.ctrlKey)) { // Slab
-                me.slabNear = me.cslabNear + dx * 100;
-                me.slabFar = me.cslabFar + dy * 100;
-            } else if (mode === 2 || me.mouseButton === 3 || ev.shiftKey) { // Zoom
-                scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
+            if (mode === 3 || (this.mouseButton === 3 && ev.ctrlKey)) { // Slab
+                this.slabNear = this.cslabNear + dx * 100;
+                this.slabFar = this.cslabFar + dy * 100;
+            } else if (mode === 2 || this.mouseButton === 3 || ev.shiftKey) { // Zoom
+                scaleFactor = (this.rotationGroup.position.z - this.CAMERA_Z) * 0.85;
                 if (scaleFactor < 80) { scaleFactor = 80; }
-                me.rotationGroup.position.z = me.cz - dy * scaleFactor;
-            } else if (mode === 1 || me.mouseButton === 2 || ev.ctrlKey) { // Translate
-                scaleFactor = (me.rotationGroup.position.z - me.CAMERA_Z) * 0.85;
+                this.rotationGroup.position.z = this.cz - dy * scaleFactor;
+            } else if (mode === 1 || this.mouseButton === 2 || ev.ctrlKey) { // Translate
+                scaleFactor = (this.rotationGroup.position.z - this.CAMERA_Z) * 0.85;
                 if (scaleFactor < 20) { scaleFactor = 20; }
                 translationByScreen = new TV3(-dx * scaleFactor, -dy * scaleFactor, 0);
-                q = me.rotationGroup.quaternion;
+                q = this.rotationGroup.quaternion;
                 qinv = new THREE.Quaternion(q.x, q.y, q.z, q.w).inverse().normalize();
                 translation = qinv.multiplyVector3(translationByScreen);
-                me.modelGroup.position.x = me.currentModelPos.x + translation.x;
-                me.modelGroup.position.y = me.currentModelPos.y + translation.y;
-                me.modelGroup.position.z = me.currentModelPos.z + translation.z;
-            } else if ((mode === 0 || me.mouseButton === 1) && r !== 0) { // Rotate
+                this.modelGroup.position.x = this.currentModelPos.x + translation.x;
+                this.modelGroup.position.y = this.currentModelPos.y + translation.y;
+                this.modelGroup.position.z = this.currentModelPos.z + translation.z;
+            } else if ((mode === 0 || this.mouseButton === 1) && r !== 0) { // Rotate
                 rs = Math.sin(r * Math.PI) / r;
-                me.dq.x = Math.cos(r * Math.PI);
-                me.dq.y = 0;
-                me.dq.z =  rs * dx;
-                me.dq.w =  rs * dy;
-                me.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
-                me.rotationGroup.quaternion.multiplySelf(me.dq);
-                me.rotationGroup.quaternion.multiplySelf(me.cq);
+                this.dq.x = Math.cos(r * Math.PI);
+                this.dq.y = 0;
+                this.dq.z =  rs * dx;
+                this.dq.w =  rs * dy;
+                this.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
+                this.rotationGroup.quaternion.multiplySelf(this.dq);
+                this.rotationGroup.quaternion.multiplySelf(this.cq);
             }
-            me.show();
-        });
+            this.show();
+        }.bind(this));
     };
 
 

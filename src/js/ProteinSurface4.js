@@ -23,6 +23,8 @@ by Euclidean Distance Transform. PLoS ONE 4(12): e8140.
 TODO: Improved performance on Firefox
       Reduce memory consumption
       Refactor!
+
+      - think about using THREE.MarchingCubes
 */
 
 
@@ -46,13 +48,18 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
     var atomsToShow, extent, expandedExtent, extendedAtoms, ps, mat, mesh;
     wireframeLinewidth = wireframeLinewidth || 1;
 
-    var proteinsurfacedone = function (surfaceGeo) {
+    var proteinSurfaceDone = function (surfaceGeo) {
         this.surfaceGeo = surfaceGeo;
-        mesh = this.getLambertMesh(this.surfaceGeo, {vertexColors: THREE.VertexColors, wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
-        ////mat.opacity = 0.8;
-        ////mat.transparent = true;
-        //mesh.doubleSided = true;
+        mesh = this.getLambertMesh(this.surfaceGeo, {
+            vertexColors: THREE.VertexColors,
+            wireframe: wireframe,
+            wireframeLinewidth: wireframeLinewidth,
+            opacity: 0.8,
+            transparent: true
+        })
+        mesh.doubleSided = true;
         group.add(mesh);
+        this.show();
     }.bind(this);
 
     if (!this.surfaceGeo || this.meshType !== type) {
@@ -68,7 +75,7 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
             var worker = new SharedWorker("js/ProteinSurface4.js");
             worker.port.onmessage = function (event) {
                 console.log("done");
-                proteinsurfacedone(event.data);
+                proteinSurfaceDone(event.data);
             }
             worker.port.start()
 
@@ -77,7 +84,7 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
             worker.port.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
         } else {
             var ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-            proteinsurfacedone(ps.getModel(this.atoms, atomsToShow));
+            proteinSurfaceDone(ps.getModel(this.atoms, atomsToShow));
         }
     }
 
@@ -99,6 +106,7 @@ this.addEventListener('connect', function(e) {
 
 
 function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
+    console.profile("constructor")
     this.initparm(expandedExtent, (type === ProteinSurface.VDW) ? false : true);
     this.fillvoxels(atoms, extendedAtoms);
     this.buildboundary();
@@ -111,6 +119,7 @@ function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
     }
     this.marchingcube(type);
     this.laplaciansmooth(1);
+    console.profileEnd("constructor")
 };
 
 ProteinSurface.VDW = 1;
@@ -120,37 +129,22 @@ ProteinSurface.MS = 4;
 
 ProteinSurface.prototype.inarray = [];
 ProteinSurface.prototype.outarray = [];
-ProteinSurface.prototype.ptranx = undefined;
-ProteinSurface.prototype.ptrany = undefined;
-ProteinSurface.prototype.ptranz = undefined;
 ProteinSurface.prototype.boxLength = 128;
 ProteinSurface.prototype.probeRadius = 1.4;
 ProteinSurface.prototype.scaleFactor = 1;
-ProteinSurface.prototype.pHeight = undefined;
-ProteinSurface.prototype.pWidth = undefined;
-ProteinSurface.prototype.pLength = undefined;
-ProteinSurface.prototype.cutRadius = undefined;
-ProteinSurface.prototype.vp = undefined;
-ProteinSurface.prototype.pminx = undefined;
-ProteinSurface.prototype.pminy = undefined;
-ProteinSurface.prototype.pminz = undefined;
-ProteinSurface.prototype.pmaxx = undefined;
-ProteinSurface.prototype.pmaxy = undefined;
-ProteinSurface.prototype.pmaxz = undefined;
 ProteinSurface.prototype.rasrad = [1.90, 1.88, 1.63, 1.48, 1.78, 1.2, 1.87, 1.96, 1.63, 0.74, 1.8, 1.48, 1.2]; //liang
 //             Calpha   c    n    o    s   h   p   Cbeta  ne  fe  other ox  hx
 
 ProteinSurface.prototype.depty = [] // new Array(13);
-ProteinSurface.prototype.widxz = new Int32Array(13);
+ProteinSurface.prototype.widxz = [] //new Int32Array(13);
 ProteinSurface.prototype.fixsf = 2;
-ProteinSurface.prototype.faces = undefined;
-ProteinSurface.prototype.verts = undefined;
 ProteinSurface.prototype.nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
            [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0], [1, 0, 1], [1, 0, -1],
            [-1, 0, 1], [-1, 0, -1], [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
            [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, -1, -1]];
 
 ProteinSurface.prototype.getModel = function (atoms, atomlist) {
+    console.profile("getModel");
     var i,
         lim,
         v = [],
@@ -194,7 +188,8 @@ ProteinSurface.prototype.getModel = function (atoms, atomlist) {
         geo.faces.push(f);
     }
     geo.computeFaceNormals();
-    geo.computeVertexNormals(false);
+    geo.computeVertexNormals();
+    console.profileEnd("getModel");
     return geo;
 };
 

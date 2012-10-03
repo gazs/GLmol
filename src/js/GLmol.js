@@ -2071,6 +2071,9 @@
         bb.position.set(atom.x, atom.y, atom.z);
         //this.labelGroup.add(bb);
         this.modelGroup.add(bb);
+
+        atom.label = bb;
+
         if (show) {
             this.show();
         }

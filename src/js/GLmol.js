@@ -2281,10 +2281,11 @@
 
     GLmol.prototype.rebuildScene = function () {
         console.time("built scene");
-        var view = this.getView();
         this.initializeScene();
         this.defineRepresentation();
-        this.setView(view);
+        //var view = this.getView(); // seems unnecessary to get and then set the same view.
+        //this.setView(view);
+        this.show();
         console.timeEnd("built scene")
 
     };

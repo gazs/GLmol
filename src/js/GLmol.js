@@ -2124,6 +2124,11 @@
         var doNotSmoothen = options.doNotSmoothen || false;
 
         switch (options.mainChainAs) {
+        case "thin ribbon and lines":
+            this.drawCartoon(asu, all, doNotSmoothen);
+            this.drawCartoonNucleicAcid(asu, all);
+            this.drawBondsAsLine(asu, all, this.lineWidth);
+            break;
         case "thin ribbon":
             this.drawCartoon(asu, all, doNotSmoothen);
             this.drawCartoonNucleicAcid(asu, all);

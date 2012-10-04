@@ -48,14 +48,13 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
     var atomsToShow, extent, expandedExtent, extendedAtoms, ps, mat, mesh;
     wireframeLinewidth = wireframeLinewidth || 1;
 
-    var proteinSurfaceDone = function (surfaceGeo) {
-        this.surfaceGeo = surfaceGeo;
+    var proteinSurfaceDone = function () {
         mesh = this.getLambertMesh(this.surfaceGeo, {
             vertexColors: THREE.VertexColors,
             wireframe: wireframe,
             wireframeLinewidth: wireframeLinewidth,
-            opacity: 0.8,
-            transparent: true
+            //opacity: 0.8,
+            //transparent: true
         })
         mesh.doubleSided = true;
         group.add(mesh);
@@ -84,8 +83,12 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
             worker.port.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
         } else {
             var ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-            proteinSurfaceDone(ps.getModel(this.atoms, atomsToShow));
+            window.ps = ps;
+            this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
+            proteinSurfaceDone();
         }
+    } else {
+        proteinSurfaceDone();
     }
 
 };

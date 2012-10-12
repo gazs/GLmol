@@ -163,7 +163,7 @@ Please also make sure that WebGL is enabled in your browser.
 
 <div id="glmol01_pdbTitle" style="position:absolute; color: white; background-color: rgba(0, 0, 0, 0.65); font-size:80%"></div>
 
-<script src="js/jquery-1.7.min.js"></script>
+<script src="js/jquery-1.8.2.js"></script>
 <!--<script src="js/Three49custom.js"></script>-->
 <script src="js/three.min.js"></script>
 
@@ -375,6 +375,9 @@ console.log("hetatms " + (+new Date() - time)); time = new Date();
 };
 
 glmol01.defineRepresentation = defineRepFromController;
+$("input[type=radio]").change(function(e) {
+    glmol01.mouseMode = parseInt($(e.target).val(), 10);
+});
 
 </script>
 

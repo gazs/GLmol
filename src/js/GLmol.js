@@ -2437,71 +2437,71 @@
         glDOM.on("contextmenu", function (ev) { ev.preventDefault(); });
         $("body").on('mouseup touchend', function (ev) {
             this.isDragging = false;
-        }.bind(this));
-            //var x,
-                //y,
-                //dx,
-                //dy,
-                //r,
-                //mvMat,
-                //pmvMat,
-                //pmvMatInv,
-                //nearest,
-                //i,
-                //atom,
-                //v,
-                //r2,
-                //tx,
-                //ty,
-                //ilim,
-                //bb;
-            //this.isDragging = false;
-
-            //this.adjustPos(ev);
-            //x = ev.x;
-            //y = ev.y;
-            //if (!x) {
-                //return;
-            //}
-            //dx = x - this.mouseStartX;
-            //dy = y - this.mouseStartY;
-            //r = Math.sqrt(dx * dx + dy * dy);
-            //if (r > 2) {
-                //return;
-            //}
-            //x -= this.container.position().left;
-            //y -= this.container.position().top;
-
-
-            //mvMat = new THREE.Matrix4().multiply(this.camera.matrixWorldInverse, this.modelGroup.matrixWorld);
-            //pmvMat = new THREE.Matrix4().multiply(this.camera.projectionMatrix, mvMat);
-            //pmvMatInv = new THREE.Matrix4().getInverse(pmvMat);
-            //tx = x / this.WIDTH * 2 - 1;
-            //ty = 1 - y / this.HEIGHT * 2;
-            //nearest = [1, {}, new TV3(0, 0, 1000)];
-            //for (i = 0, ilim = this.atoms.length; i < ilim; i++) {
-                //atom = this.atoms[i];
-                //if (!atom) { continue; }
-                //if (atom.resn === "HOH") { continue; }
-
-                //v = new TV3(atom.x, atom.y, atom.z);
-                //pmvMat.multiplyVector3(v);
-                //r2 = (v.x - tx) * (v.x - tx) + (v.y - ty) * (v.y - ty);
-                //if (r2 > 0.0005) { continue; }
-                //if (v.z < nearest[2].z) { nearest = [r2, atom, v]; }
-                //if (r2 > 0.0002) { continue; }
-                //if (r2 < nearest[0]) { nearest = [r2, atom, v]; }
-            //}
-            //atom = nearest[1];
-            //if (!atom) { return; }
-
-            //var label = [atom.chain, atom.resn, atom.resi].join(":");
-            //var bla = this.labelAtom(atom, label);
         //}.bind(this));
+            var x,
+                y,
+                dx,
+                dy,
+                r,
+                mvMat,
+                pmvMat,
+                pmvMatInv,
+                nearest,
+                i,
+                atom,
+                v,
+                r2,
+                tx,
+                ty,
+                ilim,
+                bb;
+            this.isDragging = false;
+
+            this.adjustPos(ev);
+            x = ev.x;
+            y = ev.y;
+            if (!x) {
+                return;
+            }
+            dx = x - this.mouseStartX;
+            dy = y - this.mouseStartY;
+            r = Math.sqrt(dx * dx + dy * dy);
+            if (r > 2) {
+                return;
+            }
+            x -= this.container.position().left;
+            y -= this.container.position().top;
+
+
+            mvMat = new THREE.Matrix4().multiply(this.camera.matrixWorldInverse, this.modelGroup.matrixWorld);
+            pmvMat = new THREE.Matrix4().multiply(this.camera.projectionMatrix, mvMat);
+            pmvMatInv = new THREE.Matrix4().getInverse(pmvMat);
+            tx = x / this.WIDTH * 2 - 1;
+            ty = 1 - y / this.HEIGHT * 2;
+            nearest = [1, {}, new TV3(0, 0, 1000)];
+            for (i = 0, ilim = this.atoms.length; i < ilim; i++) {
+                atom = this.atoms[i];
+                if (!atom) { continue; }
+                if (atom.resn === "HOH") { continue; }
+
+                v = new TV3(atom.x, atom.y, atom.z);
+                pmvMat.multiplyVector3(v);
+                r2 = (v.x - tx) * (v.x - tx) + (v.y - ty) * (v.y - ty);
+                if (r2 > 0.0005) { continue; }
+                if (v.z < nearest[2].z) { nearest = [r2, atom, v]; }
+                if (r2 > 0.0002) { continue; }
+                if (r2 < nearest[0]) { nearest = [r2, atom, v]; }
+            }
+            atom = nearest[1];
+            if (Object.keys(atom).length === 0) { return; }
+
+            console.log(atom)
+
+        }.bind(this));
 
         glDOM.on('mousemove touchmove', function (ev) { // touchmove
-            var mode = 0,
-                modeRadio = document.querySelectorAll('input[name=' + this.id + '_mouseMode]:checked'),
+            var mode = this.mouseMode || 0,
+                //modeRadio = document.querySelectorAll('input[name=' + this.id + '_mouseMode]:checked'),
                 dx,
                 dy,
                 r,
@@ -2517,7 +2517,6 @@
             ev.preventDefault();
             if (!this.scene) { return; }
             if (!this.isDragging) { return; }
-            if (modeRadio.length > 0) { mode = parseInt(modeRadio.val(), 10); }
 
             this.adjustPos(ev);
             x = ev.x;

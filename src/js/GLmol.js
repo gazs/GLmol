@@ -2576,4 +2576,10 @@
     // Expose GLmol to the global object
     window.GLmol = GLmol;
 
+    // AMD / Require.js boilerplate
+    if ( typeof define === "function" && define.amd ) {
+      define( "GLmol", ["three", "jquery"], function () { return GLmol; } );
+    }
+
+
 }(window));

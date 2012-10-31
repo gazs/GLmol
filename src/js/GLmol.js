@@ -17,7 +17,6 @@
          Copyright (c) 2011 John Resig
  */
 
-/* TODO: simply use modernizr? */
 
 
 (function (window, undefined) {
@@ -2412,6 +2411,7 @@
             this.currentModelPos = this.modelGroup.position.clone();
             this.cslabNear = this.slabNear;
             this.cslabFar = this.slabFar;
+            glDOM.parent().addClass("active")
         }.bind(this));
 
         glDOM.on('DOMMouseScroll mousewheel', function (ev) { // Zoom
@@ -2428,8 +2428,8 @@
         }.bind(this));
         glDOM.on("contextmenu", function (ev) { ev.preventDefault(); });
         $("body").on('mouseup touchend', function (ev) {
+            glDOM.parent().removeClass("active")
             this.isDragging = false;
-        //}.bind(this));
             var x,
                 y,
                 dx,

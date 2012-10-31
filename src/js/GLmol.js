@@ -2331,6 +2331,9 @@
                 }
             }
         }
+        if (this.atoms.length === 0) {
+          throw Error("No atoms found in parsed file, must be an error");
+        }
         console.timeEnd("parsed")
 
         if (this.protein.pdbID) {

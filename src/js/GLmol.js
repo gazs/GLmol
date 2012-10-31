@@ -2052,8 +2052,8 @@
     GLmol.prototype.labelAtom = function (atom, text, show) {
         var texture = this.createTextTex(text, 35, "#fff");
         var bb = this.billboard(texture);
-        bb.scale.x = texture.image.width / 2000; // FIXME
-        bb.scale.y = texture.image.height / 2000;
+        bb.scale.x = texture.image.width / 3000; // FIXME
+        bb.scale.y = texture.image.height / 3000;
 
 
 

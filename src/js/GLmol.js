@@ -2158,7 +2158,7 @@
             var nonBonded = this.getNonbonded(allHet);
             switch (options.mainChainAs) {
             case "stars":
-                this.drawAsCross(target, nonBonded, 0.3, true);
+                this.drawAsCross(target, nonBonded, 0.3);
                 break;
             case "spheres":
                 this.drawAtomsAsIcosahedron(target, nonBonded, 0.3, true);

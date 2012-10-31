@@ -100,6 +100,7 @@
         this.orthoscopicCamera.lookAt(new TV3(0, 0, 0));
 
         this.attachResizeEvent();
+        this.onWindowResize();
 
         // UI variables
         this.cq = new THREE.Quaternion(1, 0, 0, 0);
@@ -186,14 +187,8 @@
     GLmol.prototype.atoms = [];
 
     GLmol.prototype.onWindowResize = function (e) {
-      //fsElement = document.webkitCurrentFullScreenElement || document.mozFullScreenElement
-        //if (fsElement === this.renderer.domElement) {
-          //this.WIDTH = $(window).width() * this.aaScale;
-          //this.HEIGHT= $(window).height() * this.aaScale;
-        //} else  {
-          this.WIDTH = this.container.width() * this.aaScale;
-          this.HEIGHT = this.container.height() * this.aaScale;
-        //}
+        this.WIDTH = this.container.width() * this.aaScale;
+        this.HEIGHT = this.container.height() * this.aaScale;
         this.ASPECT = this.WIDTH / this.HEIGHT;
         this.renderer.setSize(this.WIDTH, this.HEIGHT);
         this.camera.aspect = this.ASPECT;
@@ -201,14 +196,8 @@
         this.show();
     }
     GLmol.prototype.attachResizeEvent = function () {
-        var me = this;
         $(window).resize(function (e) { // only window can capture resize event
             this.onWindowResize(e); // needed in fullscreen mode too
-        }.bind(this));
-        $(this.renderer.domElement).on("webkitfullscreenchange mozfullscreenchange fullscreenchange", function (e) {
-            console.log("fullscreen")
-            this.setBackground(0x000);
-            this.onWindowResize(e);
         }.bind(this));
     };
 

@@ -63,7 +63,7 @@
 
 
 
-    function GLmol(queryselector, suppressAutoload) {
+    function GLmol(queryselector, suppressAutoload, fallback) {
         if (!queryselector) {
             return false;
         }
@@ -77,8 +77,8 @@
 
         if (hasWebgl) {
             this.renderer = new THREE.WebGLRenderer({antialias: true});
-        //} else if (hasCanvas) {
-            //this.renderer = new THREE.CanvasRenderer();
+        } else if (hasCanvas && fallback) {
+            this.renderer = new THREE.CanvasRenderer();
         } else {
             throw new Error("no suitable renderer");
         }

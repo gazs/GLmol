@@ -2384,6 +2384,11 @@
 
     GLmol.prototype.adjustPos = function (ev) {
         var x = ev.pageX, y = ev.pageY;
+        if (!ev.originalEvent) {
+          // Zepto compatibility
+          ev.originalEvent = ev;
+        }
+        
         if (ev.originalEvent.targetTouches && ev.originalEvent.targetTouches[0]) {
             x = ev.originalEvent.targetTouches[0].pageX;
             y = ev.originalEvent.targetTouches[0].pageY;
@@ -2416,6 +2421,10 @@
 
         glDOM.on('DOMMouseScroll mousewheel', function (ev) { // Zoom
             ev.preventDefault();
+            if (!ev.originalEvent) {
+              // Zepto compatibility
+              ev.originalEvent = ev;
+            }
             if (!this.scene) { return; }
             var scaleFactor = (this.rotationGroup.position.z - this.CAMERA_Z) * 0.85;
             if (ev.originalEvent.detail) { // Webkit
@@ -2461,8 +2470,8 @@
             if (r > 2) {
                 return;
             }
-            x -= this.container.position().left;
-            y -= this.container.position().top;
+            x -= this.container.offset().left //Zepto fix, originally this.container.position().left;
+            y -= this.container.offset().top //Zepto fix, originally this.container.position().top;
 
 
             mvMat = new THREE.Matrix4().multiply(this.camera.matrixWorldInverse, this.modelGroup.matrixWorld);

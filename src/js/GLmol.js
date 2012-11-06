@@ -2314,15 +2314,19 @@
         this.loadMoleculeStr(repressZoom, source);
 
         var that = this;
-        this.controls = new THREE.TrackballControls(this.camera, this.renderer.DOMElement);
-        function render(){
-          that.controls.update();
-          that.show();
-        }
+        this.controls = new THREE.TrackballControls(this.modelGroup, this.renderer.DOMElement);
+				this.controls.rotateSpeed = 1.0;
+				this.controls.zoomSpeed = 1.2;
+				this.controls.panSpeed = 0.8;
+
+
+        this.controls.staticMoving = true;
+				this.controls.dynamicDampingFactor = 0.3;
+        this.controls.addEventListener('change', function(){that.show()});
 
         function animate(){
           requestAnimationFrame(animate);
-          render();
+          that.controls.update();
         }
         animate();
     };

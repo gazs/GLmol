@@ -23,6 +23,8 @@ by Euclidean Distance Transform. PLoS ONE 4(12): e8140.
 TODO: Improved performance on Firefox
       Reduce memory consumption
       Refactor!
+
+      - think about using THREE.MarchingCubes
 */
 
 
@@ -35,11 +37,30 @@ if (!this.console) {
   };
 }
 
+if (typeof importScripts !== 'undefined') {
+   var window = this;
+   importScripts("three.min.js");
+}
 
-GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wireframeLinewidth) {
+
+GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wireframeLinewidth, async) {
     wireframe = wireframe || false;
     var atomsToShow, extent, expandedExtent, extendedAtoms, ps, mat, mesh;
     wireframeLinewidth = wireframeLinewidth || 1;
+
+    var proteinSurfaceDone = function () {
+        mesh = this.getLambertMesh(this.surfaceGeo, {
+            vertexColors: THREE.VertexColors,
+            wireframe: wireframe,
+            wireframeLinewidth: wireframeLinewidth,
+            //opacity: 0.8,
+            //transparent: true
+        })
+        mesh.doubleSided = true;
+        group.add(mesh);
+        this.show();
+    }.bind(this);
+
     if (!this.surfaceGeo || this.meshType !== type) {
         atomsToShow = this.removeSolvents(atomlist);
         extent = this.getExtent(atomsToShow);
@@ -48,42 +69,47 @@ GLmol.prototype.generateMesh = function (group, atomlist, type, wireframe, wiref
         extendedAtoms = this.removeSolvents(this.getAtomsWithin(this.atoms, expandedExtent));
         this.meshType = type;
 
-        ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-        window.ps = ps;
-        this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
-        //var worker = new Worker("js/ProteinSurface4.js");
-        //worker.onmessage = function (event) {
-            //console.log("done");
-            //that.surfaceGeo = event.data;
-        //}
-        //worker.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
+
+        if (async) {
+            var worker = new SharedWorker("js/ProteinSurface4.js");
+            worker.port.onmessage = function (event) {
+                console.log("done");
+                proteinSurfaceDone(event.data);
+            }
+            worker.port.start()
+
+            worker.postMessage = worker.webkitPostMessage || worker.postMessage;
+
+            worker.port.postMessage([expandedExtent, type, this.atoms, extendedAtoms, atomsToShow]);
+        } else {
+            var ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
+            window.ps = ps;
+            this.surfaceGeo = ps.getModel(this.atoms, atomsToShow);
+            proteinSurfaceDone();
+        }
+    } else {
+        proteinSurfaceDone();
     }
 
-    mesh = this.getLambertMesh(this.surfaceGeo, {wireframe: wireframe, wireframeLinewidth: wireframeLinewidth})
-    //mat = new THREE.MeshLambertMaterial();
-    //mat.vertexColors = THREE.VertexColors;
-    //mat.wireframe = wireframe;
-    //mat.wireframeLinewidth = wireframeLinewidth;
-    ////mat.opacity = 0.8;
-    ////mat.transparent = true;
-    //mesh = new THREE.Mesh(this.surfaceGeo, mat);
-    //mesh.doubleSided = true;
-    group.add(mesh);
 };
 
 
-//this.addEventListener('message', function(e) {
-    //var expandedExtent = e.data[0],
-        //type = e.data[1],
-        //atoms = e.data[2],
-        //extendedAtoms = e.data[3],
-        //atomsToShow = e.data[4];
-    //ps = new ProteinSurface(expandedExtent, type, this.atoms, extendedAtoms);
-    //worker.postMessage( ps.getModel(atoms, atomsToShow) )
+this.addEventListener('connect', function(e) {
+    var port = e.ports[0];  
+    port.addEventListener('message', function(e) {
+        var expandedExtent = e.data[0],
+            type = e.data[1],
+            atoms = e.data[2],
+            extendedAtoms = e.data[3],
+            atomsToShow = e.data[4];
+        var ps = new ProteinSurface(expandedExtent, type, atoms, extendedAtoms);
+        port.postMessage( ps.getModel(atoms, atomsToShow) )
+    });
+});
 
-//});
 
 function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
+    console.profile("constructor")
     this.initparm(expandedExtent, (type === ProteinSurface.VDW) ? false : true);
     this.fillvoxels(atoms, extendedAtoms);
     this.buildboundary();
@@ -96,6 +122,7 @@ function ProteinSurface(expandedExtent, type, atoms, extendedAtoms) {
     }
     this.marchingcube(type);
     this.laplaciansmooth(1);
+    console.profileEnd("constructor")
 };
 
 ProteinSurface.VDW = 1;
@@ -105,37 +132,22 @@ ProteinSurface.MS = 4;
 
 ProteinSurface.prototype.inarray = [];
 ProteinSurface.prototype.outarray = [];
-ProteinSurface.prototype.ptranx = undefined;
-ProteinSurface.prototype.ptrany = undefined;
-ProteinSurface.prototype.ptranz = undefined;
 ProteinSurface.prototype.boxLength = 128;
 ProteinSurface.prototype.probeRadius = 1.4;
 ProteinSurface.prototype.scaleFactor = 1;
-ProteinSurface.prototype.pHeight = undefined;
-ProteinSurface.prototype.pWidth = undefined;
-ProteinSurface.prototype.pLength = undefined;
-ProteinSurface.prototype.cutRadius = undefined;
-ProteinSurface.prototype.vp = undefined;
-ProteinSurface.prototype.pminx = undefined;
-ProteinSurface.prototype.pminy = undefined;
-ProteinSurface.prototype.pminz = undefined;
-ProteinSurface.prototype.pmaxx = undefined;
-ProteinSurface.prototype.pmaxy = undefined;
-ProteinSurface.prototype.pmaxz = undefined;
 ProteinSurface.prototype.rasrad = [1.90, 1.88, 1.63, 1.48, 1.78, 1.2, 1.87, 1.96, 1.63, 0.74, 1.8, 1.48, 1.2]; //liang
 //             Calpha   c    n    o    s   h   p   Cbeta  ne  fe  other ox  hx
 
 ProteinSurface.prototype.depty = [] // new Array(13);
-ProteinSurface.prototype.widxz = new Int32Array(13);
+ProteinSurface.prototype.widxz = [] //new Int32Array(13);
 ProteinSurface.prototype.fixsf = 2;
-ProteinSurface.prototype.faces = undefined;
-ProteinSurface.prototype.verts = undefined;
 ProteinSurface.prototype.nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
            [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0], [1, 0, 1], [1, 0, -1],
            [-1, 0, 1], [-1, 0, -1], [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
            [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, -1, -1]];
 
 ProteinSurface.prototype.getModel = function (atoms, atomlist) {
+    console.profile("getModel");
     var i,
         lim,
         v = [],
@@ -179,7 +191,8 @@ ProteinSurface.prototype.getModel = function (atoms, atomlist) {
         geo.faces.push(f);
     }
     geo.computeFaceNormals();
-    geo.computeVertexNormals(false);
+    geo.computeVertexNormals();
+    console.profileEnd("getModel");
     return geo;
 };
 
@@ -481,6 +494,22 @@ ProteinSurface.prototype.fillvoxels = function (atoms, atomlist) { //(int seqini
 };
 
 ProteinSurface.prototype.getAtomType = function (atom) {
+  //atom = {
+    //'CA': 0,
+    //'C': 1,
+    //'0', 3,
+    //'N': 2,
+    //'FE': 9,
+    //'H': 5
+  //}
+  //elem = {
+    //'C': 1,
+    //'O': 11,
+    //'N': 8,
+    //'S': 4,
+    //'P': 6,
+    //'H': 1,
+  //}
     var at = 10;
     if (atom.atom === 'CA') {
         at = 0;

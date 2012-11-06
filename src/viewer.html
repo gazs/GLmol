@@ -163,7 +163,8 @@ Please also make sure that WebGL is enabled in your browser.
 
 <div id="glmol01_pdbTitle" style="position:absolute; color: white; background-color: rgba(0, 0, 0, 0.65); font-size:80%"></div>
 
-<script src="js/jquery-1.7.min.js"></script>
+<!--<script src="js/jquery-1.8.2.js"></script>-->
+<script src="js/zepto.min.js"></script>
 <!--<script src="js/Three49custom.js"></script>-->
 <script src="js/three.min.js"></script>
 
@@ -176,32 +177,42 @@ addTab('#glmol01_infobox', '400px', 2);
 
 var glmol01 = new GLmol('glmol01', true);
 var query = window.location.search.substring(1);
-if (query == '') download('pdb:2POR');
-else download(query);
+
+if (query == '') {
+    download('pdb:2POR');
+} else {
+  download(query);
+}
+
 
 function download(query) {
-   var baseURL = '';
-   if (query.substr(0, 4) == 'pdb:') {
-      query = query.substr(4).toUpperCase();
-      if (!query.match(/^[1-9][A-Za-z0-9]{3}$/)) {
-         alert("Wrong PDB ID"); return;
-      }
-      uri = "http://www.pdb.org/pdb/files/" + query + ".pdb";
-   } else if (query.substr(0, 4) == 'cid:') {
-      query = query.substr(4);
-      if (!query.match(/^[1-9]+$/)) {
-         alert("Wrong Compound ID"); return;
-      }
-      uri = "http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/" + query + 
-        "/SDF?record_type=3d";
-   }
+    var uri;
+    var baseURL = '';
+    if (query.substr(0, 4) == 'pdb:') {
+        query = query.substr(4).toUpperCase();
+        if (!query.match(/^[1-9][A-Za-z0-9]{3}$/)) {
+            alert("Wrong PDB ID");
+            return;
+        }
+        uri = "http://www.pdb.org/pdb/files/" + query + ".pdb";
+    } else if (query.substr(0, 4) == 'cid:') {
+        query = query.substr(4);
+        if (!query.match(/^[1-9]+$/)) {
+            alert("Wrong Compound ID");
+            return;
+        }
+        uri = "http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/" + query + 
+          "/SDF?record_type=3d";
+    } else {
+        uri = query;
+    }
 
-   $('#loading').show();
-   $.get(uri, function(ret) {
-      $("#glmol01_src").val(ret);
-      glmol01.loadMolecule();
-      $('#loading').hide();
-   });
+    $('#loading').show();
+    $.get(uri, function(ret) {
+        $("#glmol01_src").val(ret);
+        glmol01.loadMolecule();
+        $('#loading').hide();
+    });
 }
 
 function addTab(tabId, height, zIndex) {
@@ -375,6 +386,9 @@ console.log("hetatms " + (+new Date() - time)); time = new Date();
 };
 
 glmol01.defineRepresentation = defineRepFromController;
+$("input[type=radio]").change(function(e) {
+    glmol01.mouseMode = parseInt($(e.target).val(), 10);
+});
 
 </script>
 

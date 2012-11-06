@@ -1,0 +1,10 @@
+{
+  "name": "GLmol",
+  "version": "0.48/g",
+  "main": ["src/js/GLmol.js"],
+  "dependencies": {
+    "jquery": "1.8.2",
+    "threejs": "r51"
+  }
+}
+

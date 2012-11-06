@@ -3331,7 +3331,11 @@ END
 </textarea>
 
 
-<script src="js/jquery-1.7.min.js"></script>
+<button id="fullscreen">fullscreen</button>
+<button id="screenshot">screenshot</button>
+<button id="proteinsurface">proteinsurface</button>
+
+<script src="js/jquery-1.8.2.js"></script>
 <!--<script src="js/Three49custom.js"></script>-->
 <script src="js/three.min.js"></script>
 <script type="text/javascript" src="js/GLmol.js"></script>
@@ -3342,10 +3346,18 @@ glmol01.options = {
   colorBy: "chain",
   sideChainAsLines: true,
   hetatmsAs: "sticks",
-  labelCA: true,
+//  labelCA: true,
   // proteinSurface: ProteinSurface.VDW
 
 }
 glmol01.loadMolecule();
+$("#fullscreen").on("click", function () {glmol01.renderer.domElement.webkitRequestFullScreen()})
+$("#screenshot").on("click", function () {
+   glmol01.show();
+   var imageURI = glmol01.renderer.domElement.toDataURL("image/png");
+   window.open(imageURI);
+   });
+$("#proteinsurface").on("click", function () {glmol01.generateMesh(glmol01.modelGroup, glmol01.atoms, ProteinSurface.VDW)})
+    
 </script>
 </body></html>

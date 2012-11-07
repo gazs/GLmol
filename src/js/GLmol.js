@@ -2435,7 +2435,9 @@
             console.log(ev.originalEvent.wheelDelta, ev.originalEvent.detail, this.rotationGroup.position.z);
             this.show();
         }.bind(this));
+
         glDOM.on("contextmenu", function (ev) { ev.preventDefault(); });
+
         $("body").on('mouseup touchend', function (ev) {
             glDOM.parent().removeClass("active")
             this.isDragging = false;
@@ -2496,7 +2498,7 @@
             atom = nearest[1];
             if (Object.keys(atom).length === 0) { return; }
 
-            console.log(atom)
+            glDOM.trigger("atom:select", [atom]);
 
         }.bind(this));
 

@@ -127,11 +127,11 @@
         "S": 0xCCCC00,
         "P": 0x6622CC,
         "F": 0x00CC00,
-        "CL": 0x00CC00,
-        "BR": 0x882200,
+        "Cl": 0x00CC00,
+        "Br": 0x882200,
         "I": 0x6600AA,
-        "FE": 0xCC6600,
-        "CA": 0x8888AA
+        "Fe": 0xCC6600,
+        "Ca": 0x8888AA
     };
     // Reference: A. Bondi, J. Phys. Chem., 1964, 68, 441.
     GLmol.prototype.vdwRadii = {
@@ -145,12 +145,12 @@
         "F": 1.47,
         "P": 1.80,
         "S": 1.80,
-        "CL": 1.75,
-        "BR": 1.85,
-        "SE": 1.90,
-        "ZN": 1.39,
-        "CU": 1.4,
-        "NI": 1.63
+        "Cl": 1.75,
+        "Br": 1.85,
+        "Se": 1.90,
+        "Zn": 1.39,
+        "Cu": 1.4,
+        "Ni": 1.63
     };
 
     GLmol.prototype.NEAR = 1;
@@ -2320,7 +2320,7 @@
         var title_elem = document.querySelector(this.queryselector + '_pdbTitle'),
             titleStr = '',
             parser_id,
-            parsers = [this.parsePDB2, this.parseSDF, this.parseXYZ];
+            parsers = [this.parseSDF, this.parseXYZ, this.parsePDB2];
 
 
         for (parser_id in parsers) {

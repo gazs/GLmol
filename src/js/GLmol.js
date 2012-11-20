@@ -2133,7 +2133,6 @@
         ctx.strokeStyle = ctx.fillStyle;
         ctx.font = size + "pt Arial";
         ctx.fillText(text, 0, size * 0.9);
-        //this.renderer.domElement.parentElement.appendChild(canvas);
 
         tex = new THREE.Texture(canvas);
         tex.needsUpdate = true;
@@ -2151,15 +2150,13 @@
     };
 
     GLmol.prototype.labelAtom = function (atom, text, show) {
-        var texture = this.createTextTex(text, 35, "#fff");
+        var texture = this.createTextTex(text, 40, "#fff");
         var bb = this.billboard(texture);
-        bb.scale.x = texture.image.width / 3000; // FIXME
-        bb.scale.y = texture.image.height / 3000;
+        bb.scale.set( texture.image.width / 40 , texture.image.height / 40, 1.0 )
 
 
 
         bb.position.set(atom.x, atom.y, atom.z);
-        //this.labelGroup.add(bb);
         this.modelGroup.add(bb);
 
         atom.label = bb;
@@ -2169,8 +2166,8 @@
         }
     };
 
-    GLmol.prototype.defineRepresentation = function () {
-        var all = this.atoms,
+    GLmol.prototype.defineRepresentation = function (all) {
+        var all = all || this.atoms,
             hetatm = this.getHetatms(all).filter(isNotSolvent);
 
         var options = this.options || {
@@ -2361,9 +2358,6 @@
         this.rotationGroup.useQuaternion = true;
         this.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
         this.rotationGroup.add(this.modelGroup);
-
-        this.labelGroup = new THREE.Object3D();
-        this.rotationGroup.add(this.labelGroup);
 
         this.scene.add(this.rotationGroup);
         this.setupLights(this.scene);

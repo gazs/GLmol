@@ -2656,7 +2656,7 @@
     };
 
 
-    GLmol.prototype.show = function () {
+    GLmol.prototype._show = function () {
         if (!this.scene) {
             return;
         }
@@ -2666,6 +2666,9 @@
         this.renderer.render(this.scene, this.camera);
         console.timeEnd("rendered");
     };
+    GLmol.prototype.show = function () {
+        requestAnimationFrame(this._show.bind(this));
+    }
 
     // For scripting
     GLmol.prototype.doFunc = function (func) {

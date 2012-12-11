@@ -2132,7 +2132,7 @@
         ctx.fillStyle = color || "rgba(0, 0, 0, 1.0)";
         ctx.strokeStyle = ctx.fillStyle;
         ctx.font = size + "pt Arial";
-        ctx.fillText(text, 0, size * 0.9);
+        ctx.fillText(text, 0, size);
 
         tex = new THREE.Texture(canvas);
         tex.needsUpdate = true;

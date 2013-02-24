@@ -66,7 +66,7 @@
         if (!queryselector) {
             return false;
         }
-        this.queryselector = '#' + queryselector;
+        this.queryselector = queryselector;
         this.aaScale = 1; // or 2
 
         this.container = $(this.queryselector);
@@ -261,7 +261,6 @@
     GLmol.prototype.aaScale = 1;
     GLmol.prototype.scene = null;
     GLmol.prototype.rotationGroup = null; // which contains modelGroup
-    GLmol.prototype.labelGroup = null; // which contains modelGroup
     GLmol.prototype.modelGroup = null;
     GLmol.prototype.bgColor = 0x000000;
     GLmol.prototype.fov = 20;
@@ -555,6 +554,9 @@
             } else if (recordName === 'COMPND') {
                 console.warn("CMPND record unimplemented"); // TODO: Implement me!
             }
+            //else {
+                //console.warn(recordName + " record unimplemented");
+            //}
         }
 
        // Assign secondary structures
@@ -693,8 +695,12 @@
         var s = atom1.bonds.indexOf(atom2.serial),
             distSquared;
         if (s !== -1) { return atom1.bondOrder[s]; }
+        if (atom1.resn === "LIG" || atom2.resn === "LIG") {
+            return 0;
+        }
 
         if (this.protein.smallMolecule && (atom1.hetflag || atom2.hetflag)) { return 0; } // CHECK: or should I ?
+
 
         distSquared = (atom1.x - atom2.x) * (atom1.x - atom2.x) +
                       (atom1.y - atom2.y) * (atom1.y - atom2.y) +
@@ -746,29 +752,41 @@
             atom2,
             order;
 
+
         if (multipleBonds) {
             bondR /= 2.5;
         }
 
         for (_i = 0; _i < nAtoms; _i++) {
             atom1 = atomlist[_i];
-            if (!atom1) { continue; }
-            for (_j = _i + 1; _j < _i + 30 && _j < nAtoms; _j++) {
+            if (!atom1) {
+                continue;
+            }
+            for (_j = _i + 1; _j < _i + 300 && _j < nAtoms; _j++) {
+            //for (_j = _i + 1; _j < nAtoms; _j++) {
                 atom2 = atomlist[_j];
                 if (!atom2) {
                     continue;
                 }
                 order = this.isConnected(atom1, atom2);
-                if (order === 0) { continue; }
+                if (order === 0) {
+                    continue;
+                }
                 atom1.connected = atom2.connected = true;
                 this.drawBondAsStickSub(group, atom1, atom2, bondR, (!!multipleBonds) ? order : 1);
             }
             for (_j = 0; _j < atom1.bonds.length; _j++) {
                 j = atom1.bonds[_j];
-                if (j < i + 30) { continue; } // be conservative!
-                if (atomlist.indexOf(j) === -1) { continue; }
+                if (j < i + 300) {
+                    continue;
+                } // be conservative!
+                if (atomlist.indexOf(j) === -1) {
+                    continue;
+                }
                 atom2 = this.atoms[j];
-                if (!atom2) { continue; }
+                if (!atom2) {
+                    continue;
+                }
                 atom1.connected = atom2.connected = true;
                 this.drawBondAsStickSub(group, atom1, atom2, bondR, (!!multipleBonds) ? atom1.bondOrder[_j] : 1);
             }
@@ -938,33 +956,50 @@
             line;
 
 
+            
+
+            
         for (_i = 0; _i < nAtoms; _i++) {
             atom1 = atomlist[_i];
-            if (!atom1) { continue; }
-            for (_j = _i + 1; _j < _i + 30 && _j < nAtoms; _j++) {
+            if (!atom1) {
+                continue;
+            }
+            for (_j = _i + 1; _j < _i + 300 && _j < nAtoms; _j++) {
+            //for (_j = _i + 1; _j < nAtoms; _j++) {
                 atom2 = atomlist[_j];
-                if (!atom2) { continue; }
+                if (!atom2) {
+                    continue;
+                }
                 order = this.isConnected(atom1, atom2);
-                if (order === 0) { continue; }
+                if (order === 0) {
+                    continue;
+                }
 
                 this.drawBondsAsLineSub(geo, atom1, atom2, order);
             }
             for (_j = 0; _j < atom1.bonds.length; _j++) {
                 j = atom1.bonds[_j];
-                if (j < i + 30) { continue; } // be conservative!
-                if (atomlist.indexOf(j) === -1) { continue; }
+                if (j < i + 300) {
+                    continue;
+                } // be conservative!
+                if (atomlist.indexOf(j) === -1) {
+                    continue;
+                }
                 atom2 = this.atoms[j];
-                if (!atom2) { continue; }
+                if (!atom2) {
+                    continue;
+                }
                 this.drawBondsAsLineSub(geo, atom1, atom2, atom1.bondOrder[_j]);
             }
         }
 
-        lineMaterial = new THREE.LineBasicMaterial({linewidth: lineWidth});
+        //lineMaterial = new THREE.LineBasicMaterial({linewidth: lineWidth});
+        lineMaterial = new THREE.LineDashedMaterial( { linewidth: lineWidth });
         lineMaterial.vertexColors = true;
 
-        line = new THREE.Line(geo, lineMaterial);
-        line.type = THREE.LinePieces;
+        line = new THREE.Line(geo, lineMaterial, THREE.LinePieces);
         group.add(line);
+
     };
 
     GLmol.prototype.drawSmoothCurve = function (group, _points, width, colors, div) {
@@ -2132,7 +2167,7 @@
         ctx.fillStyle = color || "rgba(0, 0, 0, 1.0)";
         ctx.strokeStyle = ctx.fillStyle;
         ctx.font = size + "pt Arial";
-        ctx.fillText(text, 0, size);
+        ctx.fillText(text, 0, size * 0.95); // Magic
 
         tex = new THREE.Texture(canvas);
         tex.needsUpdate = true;
@@ -2152,7 +2187,7 @@
     GLmol.prototype.labelAtom = function (atom, text, show) {
         var texture = this.createTextTex(text, 40, "#fff");
         var bb = this.billboard(texture);
-        bb.scale.set( texture.image.width / 40 , texture.image.height / 40, 1.0 )
+        bb.scale.set( texture.image.width / 30 , texture.image.height / 30, 1.0 )
 
 
 
@@ -2166,26 +2201,26 @@
         }
     };
 
-    GLmol.prototype.defineRepresentation = function (all) {
-        var all = all || this.atoms,
+    GLmol.prototype.defineRepresentation = function () {
+        var all = this.atoms,
             hetatm = this.getHetatms(all).filter(isNotSolvent);
+
 
         var options = this.options || {
             colorBy: "chain",
             mainChainAs: "thick ribbon",
             doNotSmoothen: false,
             sideChainAsLines: "true",
-            nonBondedAs: "stars",
+            //nonBondedAs: "stars",
             hetatmsAs: "ball and stick",
             // --
             //
             //unitCell: true,
             //biologicalAssembly: true,
             //crystalPacking: true,
-            //labelCA: true,
         };
 
-        var asu = new THREE.Object3D();
+        //var asu = new THREE.Object3D();
 
         this.colorByAtom(all, {});
 
@@ -2212,42 +2247,42 @@
 
         switch (options.mainChainAs) {
         case "thin ribbon and lines":
-            this.drawCartoon(asu, all, doNotSmoothen);
-            this.drawCartoonNucleicAcid(asu, all);
-            this.drawBondsAsLine(asu, all, this.lineWidth);
+            this.drawCartoon(this.modelGroup, all, doNotSmoothen);
+            this.drawCartoonNucleicAcid(this.modelGroup, all);
+            this.drawBondsAsLine(this.modelGroup, all, this.lineWidth);
             break;
         case "thin ribbon":
-            this.drawCartoon(asu, all, doNotSmoothen);
-            this.drawCartoonNucleicAcid(asu, all);
+            this.drawCartoon(this.modelGroup, all, doNotSmoothen);
+            this.drawCartoonNucleicAcid(this.modelGroup, all);
             break;
         case "strand":
-            this.drawStrand(asu, all, null, null, null, null, null, doNotSmoothen);
-            this.drawStrandNucleicAcid(asu, all);
+            this.drawStrand(this.modelGroup, all, null, null, null, null, null, doNotSmoothen);
+            this.drawStrandNucleicAcid(this.modelGroup, all);
             break;
         case "cylinder and plate":
-            this.drawHelixAsCylinder(asu, all, 1.6);
-            this.drawCartoonNucleicAcid(asu, all);
+            this.drawHelixAsCylinder(this.modelGroup, all, 1.6);
+            this.drawCartoonNucleicAcid(this.modelGroup, all);
             break;
         case "C alpha trace":
-            this.drawMainchainCurve(asu, all, this.curveWidth, 'CA', 1);
-            this.drawMainchainCurve(asu, all, this.curveWidth, 'O3\'', 1);
+            this.drawMainchainCurve(this.modelGroup, all, this.curveWidth, 'CA', 1);
+            this.drawMainchainCurve(this.modelGroup, all, this.curveWidth, 'O3\'', 1);
             break;
         case "B factor Tube":
-            this.drawMainchainTube(asu, all, 'CA');
-            this.drawMainchainTube(asu, all, 'O3\''); // FIXME: 5' end problem!
+            this.drawMainchainTube(this.modelGroup, all, 'CA');
+            this.drawMainchainTube(this.modelGroup, all, 'O3\''); // FIXME: 5' end problem!
             break;
         case "bonds":
-            this.drawBondsAsLine(asu, all, this.lineWidth);
+            this.drawBondsAsLine(this.modelGroup, all, this.lineWidth);
             break;
         case "thick ribbon":
         default:
-            this.drawCartoon(asu, all, doNotSmoothen, this.thickness);
-            this.drawCartoonNucleicAcid(asu, all, null, this.thickness);
+            this.drawCartoon(this.modelGroup, all, doNotSmoothen, this.thickness);
+            this.drawCartoonNucleicAcid(this.modelGroup, all, null, this.thickness);
             break;
         }
 
         if (options.sideChainAsLines) {
-            this.drawBondsAsLine(asu, this.getSidechains(all), this.lineWidth);
+            this.drawBondsAsLine(this.modelGroup, this.getSidechains(all), this.lineWidth);
         }
 
         
@@ -2256,10 +2291,10 @@
             var nonBonded = this.getNonbonded(allHet);
             switch (options.mainChainAs) {
             case "stars":
-                this.drawAsCross(target, nonBonded, 0.3);
+                this.drawAsCross(this.modelGroup, nonBonded, 0.3);
                 break;
             case "spheres":
-                this.drawAtomsAsIcosahedron(target, nonBonded, 0.3, true);
+                this.drawAtomsAsIcosahedron(this.modelGroup, nonBonded, 0.3, true);
                 break;
             }
 
@@ -2268,23 +2303,23 @@
 
         switch (options.hetatmsAs) {
             case "sticks":
-             this.drawBondsAsStick(asu, hetatm, this.cylinderRadius, this.cylinderRadius, true); //hetatm sticks
-             this.drawCartoon(asu, all, this.curveWidth, this.thickness);
+                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius, this.cylinderRadius, true); //hetatm sticks
+                this.drawCartoon(this.modelGroup, all, this.curveWidth, this.thickness);
                 break;
             case "ball and stick":
-                this.drawBondsAsStick(asu, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, false, 0.3);
+                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, false, 0.3);
                 break;
             case "ball and stick multiple":
-                this.drawBondsAsStick(asu, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, true, 0.3);
+                this.drawBondsAsStick(this.modelGroup, hetatm, this.cylinderRadius / 2.0, this.cylinderRadius, true, true, 0.3);
                 break;
             case "spheres":
-                this.drawAtomsAsSphere(asu, hetatm, this.sphereRadius);
+                this.drawAtomsAsSphere(this.modelGroup, hetatm, this.sphereRadius);
                 break;
             case "icosahedrons":
-                this.drawAtomsAsIcosahedron(asu, hetatm, this.sphereRadius);
+                this.drawAtomsAsIcosahedron(this.modelGroup, hetatm, this.sphereRadius);
                 break;
             case "lines":
-                this.drawBondsAsLine(asu, hetatm, this.curveWidth);
+                this.drawBondsAsLine(this.modelGroup, hetatm, this.curveWidth);
                 break;
         }
 
@@ -2293,22 +2328,14 @@
         }
 
         if (options.biologicalAssembly) {
-            this.drawSymmetryMates2(this.modelGroup, asu, this.protein.biomtMatrices);
+            this.drawSymmetryMates2(this.modelGroup, all, this.protein.biomtMatrices);
         }
 
         if (options.crystalPacking) {
-            this.drawSymmetryMatesWithTranslation2(this.modelGroup, asu, this.protein.symMat);
-        }
-        if (options.labelCA) {
-            console.time("labelCA");
-            this.atoms.filter(function(atom){return atom.atom == "CA"}).forEach(function(CA) {
-                this.labelAtom(CA, CA.resn + "" + CA.resi, false);
-            }.bind(this))
-            this.show();
-            console.timeEnd("labelCA");
+            alert("crystalpacking")
+            this.drawSymmetryMatesWithTranslation2(this.modelGroup, all, this.protein.symMat);
         }
 
-        this.modelGroup.add(asu);
 
         if (options.proteinSurface) {
             console.log("generating proteinsurface");
@@ -2349,26 +2376,25 @@
     };
 
     GLmol.prototype.initializeScene = function () {
-        // CHECK: Should I explicitly call scene.deallocateObject?
-        this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(this.bgColor, 100, 200);
+      this.scene = new THREE.Scene();
+      this.scene.fog = new THREE.Fog(this.bgColor, 100, 200);
 
-        this.modelGroup = new THREE.Object3D();
-        this.rotationGroup = new THREE.Object3D();
-        this.rotationGroup.useQuaternion = true;
-        this.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
-        this.rotationGroup.add(this.modelGroup);
+      this.modelGroup = new THREE.Object3D();
+      this.rotationGroup = new THREE.Object3D();
+      this.rotationGroup.useQuaternion = true;
+      this.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
+      this.rotationGroup.add(this.modelGroup);
 
-        this.scene.add(this.rotationGroup);
-        this.setupLights(this.scene);
-    };
+      this.scene.add(this.rotationGroup);
+      this.setupLights(this.scene);
+    }
 
     GLmol.prototype.rebuildScene = function () {
         console.time("built scene");
+        var view = this.getView(); // FIXME: why does view change inbetween?
         this.initializeScene();
         this.defineRepresentation();
-        //var view = this.getView(); // seems unnecessary to get and then set the same view.
-        //this.setView(view);
+        this.setView(view);
         this.show();
         console.timeEnd("built scene")
 
@@ -2413,10 +2439,14 @@
 
     GLmol.prototype.loadMoleculeStr = function (repressZoom, source) {
         console.time("parsed")
-        var title_elem = document.querySelector(this.queryselector + '_pdbTitle'),
+        var title_elem,
             titleStr = '',
             parser_id,
             parsers = [this.parseSDF, this.parseXYZ, this.parsePDB2];
+        try {
+          title_elem = document.querySelector(this.queryselector + '_pdbTitle');
+        } catch (e) {}
+
 
 
         for (parser_id in parsers) {
@@ -2598,7 +2628,7 @@
 
         }.bind(this));
 
-        glDOM.on('mousemove touchmove', function (ev) { // touchmove
+        $("body").on('mousemove touchmove', function (ev) { // touchmove
             var mode = this.mouseMode || 0,
                 //modeRadio = document.querySelectorAll('input[name=' + this.id + '_mouseMode]:checked'),
                 dx,
@@ -2656,7 +2686,7 @@
     };
 
 
-    GLmol.prototype._show = function () {
+    GLmol.prototype.show = function () {
         if (!this.scene) {
             return;
         }
@@ -2666,9 +2696,9 @@
         this.renderer.render(this.scene, this.camera);
         console.timeEnd("rendered");
     };
-    GLmol.prototype.show = function () {
-        requestAnimationFrame(this._show.bind(this));
-    }
+    //GLmol.prototype.show = function () {
+        //requestAnimationFrame(this._show.bind(this));
+    //}
 
     // For scripting
     GLmol.prototype.doFunc = function (func) {

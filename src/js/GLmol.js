@@ -627,8 +627,8 @@
             p1 = points[i + 1];
             p2 = points[i + 2];
             p3 = points[(i === size - 3) ? size - 1 : i + 3];
-            v0 = new TV3().sub(p2, p0).multiplyScalar(0.5);
-            v1 = new TV3().sub(p3, p1).multiplyScalar(0.5);
+            v0 = new TV3().subVectors(p2, p0).multiplyScalar(0.5);
+            v1 = new TV3().subVectors(p3, p1).multiplyScalar(0.5);
             for (j = 0; j < DIV; j++) {
                 t = 1.0 / DIV * j;
                 x = p1.x + t * v0.x
@@ -721,7 +721,7 @@
 
         p1 = new TV3(atom1.x, atom1.y, atom1.z);
         p2 = new TV3(atom2.x, atom2.y, atom2.z);
-        mp = p1.clone().addSelf(p2).multiplyScalar(0.5);
+        mp = p1.clone().add(p2).multiplyScalar(0.5);
 
         c1 = new TCo(atom1.color);
         c2 = new TCo(atom2.color);
@@ -731,12 +731,12 @@
         }
         if (order > 1) {
             delta = this.calcBondDelta(atom1, atom2, bondR * 2.3);
-            tmp = mp.clone().addSelf(delta);
-            this.drawCylinder(group, p1.clone().addSelf(delta), tmp, bondR, atom1.color);
-            this.drawCylinder(group, p2.clone().addSelf(delta), tmp, bondR, atom2.color);
-            tmp = mp.clone().subSelf(delta);
-            this.drawCylinder(group, p1.clone().subSelf(delta), tmp, bondR, atom1.color);
-            this.drawCylinder(group, p2.clone().subSelf(delta), tmp, bondR, atom2.color);
+            tmp = mp.clone().add(delta);
+            this.drawCylinder(group, p1.clone().add(delta), tmp, bondR, atom1.color);
+            this.drawCylinder(group, p2.clone().add(delta), tmp, bondR, atom2.color);
+            tmp = mp.clone().sub(delta);
+            this.drawCylinder(group, p1.clone().sub(delta), tmp, bondR, atom1.color);
+            this.drawCylinder(group, p2.clone().sub(delta), tmp, bondR, atom2.color);
         }
     };
 
@@ -908,7 +908,7 @@
         if (order > 1) { delta = this.calcBondDelta(atom1, atom2, 0.15); }
         p1 = new TV3(atom1.x, atom1.y, atom1.z);
         p2 = new TV3(atom2.x, atom2.y, atom2.z);
-        mp = p1.clone().addSelf(p2).multiplyScalar(0.5);
+        mp = p1.clone().add(p2).multiplyScalar(0.5);
 
         c1 = new TCo(atom1.color);
         c2 = new TCo(atom2.color);
@@ -923,19 +923,19 @@
             geo.colors.push(c2);
         }
         if (order > 1) {
-            geo.vertices.push(p1.clone().addSelf(delta));
+            geo.vertices.push(p1.clone().add(delta));
             geo.colors.push(c1);
-            geo.vertices.push(tmp = mp.clone().addSelf(delta));
+            geo.vertices.push(tmp = mp.clone().add(delta));
             geo.colors.push(c1);
-            geo.vertices.push(p2.clone().addSelf(delta));
+            geo.vertices.push(p2.clone().add(delta));
             geo.colors.push(c2);
             geo.vertices.push(tmp);
             geo.colors.push(c2);
-            geo.vertices.push(p1.clone().subSelf(delta));
+            geo.vertices.push(p1.clone().sub(delta));
             geo.colors.push(c1);
-            geo.vertices.push(tmp = mp.clone().subSelf(delta));
+            geo.vertices.push(tmp = mp.clone().sub(delta));
             geo.colors.push(c1);
-            geo.vertices.push(p2.clone().subSelf(delta));
+            geo.vertices.push(p2.clone().sub(delta));
             geo.colors.push(c2);
             geo.vertices.push(tmp);
             geo.colors.push(c2);
@@ -1100,7 +1100,7 @@
             }
 
             if (i < lim - 1) {
-                delta = new TV3().sub(points[i], points[i + 1]);
+                delta = new TV3().subVectors(points[i], points[i + 1]);
                 axis1 = new TV3(0, -delta.z, delta.y).normalize().multiplyScalar(r);
                 axis2 = new TV3().cross(delta, axis1).normalize().multiplyScalar(r);
     //          var dir = 1, offset = 0;
@@ -1132,8 +1132,8 @@
             c =  new TCo(colors[Math.round((i - 1) / axisDiv)]);
 
             reg = 0;
-            r1 = new TV3().sub(geo.vertices[offset], geo.vertices[offset + circleDiv]).lengthSq();
-            r2 = new TV3().sub(geo.vertices[offset], geo.vertices[offset + circleDiv + 1]).lengthSq();
+            r1 = new TV3().subVectors(geo.vertices[offset], geo.vertices[offset + circleDiv]).lengthSq();
+            r2 = new TV3().subVectors(geo.vertices[offset], geo.vertices[offset + circleDiv + 1]).lengthSq();
             if (r1 > r2) {r1 = r2; reg = 1; }
             for (j = 0; j < circleDiv; j++) {
                 geo.faces.push(new TF3(offset + j, offset + (j + reg) % circleDiv + circleDiv, offset + (j + 1) % circleDiv));
@@ -1263,13 +1263,13 @@
             geo.vertices.push(p2v = p2[i]); // 2
             geo.vertices.push(p2v); // 3
             if (i < lim - 1) {
-                toNext = p1[i + 1].clone().subSelf(p1[i]);
-                toSide = p2[i].clone().subSelf(p1[i]);
-                axis = toSide.crossSelf(toNext).normalize().multiplyScalar(thickness);
+                toNext = p1[i + 1].clone().sub(p1[i]);
+                toSide = p2[i].clone().sub(p1[i]);
+                axis = toSide.cross(toNext).normalize().multiplyScalar(thickness);
             }
-            geo.vertices.push(a1v = p1[i].clone().addSelf(axis)); // 4
+            geo.vertices.push(a1v = p1[i].clone().add(axis)); // 4
             geo.vertices.push(a1v); // 5
-            geo.vertices.push(a2v = p2[i].clone().addSelf(axis)); // 6
+            geo.vertices.push(a2v = p2[i].clone().add(axis)); // 6
             geo.vertices.push(a2v); // 7
         }
         for (i = 1, lim = p1.length; i < lim; i++) {
@@ -1333,7 +1333,7 @@
         if (!from || !to) { return; }
 
         color = new TCo(color);
-        var midpoint = new TV3().add(from, to).multiplyScalar(0.5),
+        var midpoint = new TV3().addVectors(from, to).multiplyScalar(0.5),
             cylinderMaterial,
             cylinder,
             m;
@@ -1351,7 +1351,7 @@
         cylinder.matrixAutoUpdate = false;
         m = new THREE.Matrix4().makeScale(radius, radius, from.distanceTo(to));
         m.rotateX(Math.PI / 2);
-        cylinder.matrix.multiplySelf(m);
+        cylinder.matrix.multiply(m);
         group.add(cylinder);
     };
 
@@ -1454,7 +1454,7 @@
                         colors.push(atom.color);
                     } else { // O
                         O = new TV3(atom.x, atom.y, atom.z);
-                        O.subSelf(currentCA);
+                        O.sub(currentCA);
                         O.normalize(); // can be omitted for performance
                         O.multiplyScalar((ss === 'c') ? coilWidth : helixSheetWidth);
                         if (prevCO && O.dot(prevCO) < 0) { O.negate(); }
@@ -1723,7 +1723,7 @@
                             continue;
                         }
                         O = new TV3(atom.x, atom.y, atom.z);
-                        O.subSelf(currentO3);
+                        O.sub(currentO3);
                         O.normalize().multiplyScalar(nucleicAcidWidth);  // TODO: refactor
                         if (prevOO && O.dot(prevOO) < 0) {
                             O.negate();
@@ -1770,7 +1770,7 @@
         for (i = 0, lim = Math.floor(points.length / 2); i < lim; i++) {
             p1 = points[2 * i];
             p2 = points[2 * i + 1];
-            delta = p2.clone().subSelf(p1);
+            delta = p2.clone().sub(p1);
             dist = delta.length();
             delta.normalize().multiplyScalar(step);
             jlim =  Math.floor(dist / step);
@@ -2140,13 +2140,11 @@
                 for (b = -1; b <= 0; b++) {
                     for (c = -1; c <= 0; c++) {
                         translationMat = new THREE.Matrix4().makeTranslation(
-                            new THREE.Vector3(
                             p.ax * a + p.bx * b + p.cx * c,
                             p.ay * a + p.by * b + p.cy * c,
                             p.az * a + p.bz * b + p.cz * c
-                            )
                         );
-                        symop = mat.clone().multiplySelf(translationMat);
+                        symop = mat.clone().multiply(translationMat);
                         if (symop.isIdentity()) { continue; }
                         symmetryMate = THREE.SceneUtils.cloneObject(asu);
                         symmetryMate.matrix = symop;
@@ -2411,7 +2409,7 @@
             maxD;
 
         if (this.protein.appliedMatrix) {
-            center = this.protein.appliedMatrix.multiplyVector3(center);
+            center = center.applyMatrix3(this.protein.appliedMatrix);
         }
 
         this.modelGroup.position = center.multiplyScalar(-1);
@@ -2604,8 +2602,8 @@
             y -= this.container.offset().top //Zepto fix, originally this.container.position().top;
 
 
-            mvMat = new THREE.Matrix4().multiply(this.camera.matrixWorldInverse, this.modelGroup.matrixWorld);
-            pmvMat = new THREE.Matrix4().multiply(this.camera.projectionMatrix, mvMat);
+            mvMat = new THREE.Matrix4().multiplyMatrices(this.camera.matrixWorldInverse, this.modelGroup.matrixWorld);
+            pmvMat = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, mvMat);
             pmvMatInv = new THREE.Matrix4().getInverse(pmvMat);
             tx = x / this.WIDTH * 2 - 1;
             ty = 1 - y / this.HEIGHT * 2;
@@ -2616,7 +2614,8 @@
                 if (atom.resn === "HOH") { continue; }
 
                 v = new TV3(atom.x, atom.y, atom.z);
-                pmvMat.multiplyVector3(v);
+                //pmvMat.multiplyVector3(v);
+                v.applyMatrix3(pmvMat);
                 r2 = (v.x - tx) * (v.x - tx) + (v.y - ty) * (v.y - ty);
                 if (r2 > 0.0005) { continue; }
                 if (v.z < nearest[2].z) { nearest = [r2, atom, v]; }
@@ -2669,7 +2668,8 @@
                 translationByScreen = new TV3(-dx * scaleFactor, -dy * scaleFactor, 0);
                 q = this.rotationGroup.quaternion;
                 qinv = new THREE.Quaternion(q.x, q.y, q.z, q.w).inverse().normalize();
-                translation = qinv.multiplyVector3(translationByScreen);
+                //translation = qinv.multiplyVector3(translationByScreen);
+                translation = translationByScreen.applyQuaternion(qinv);
                 this.modelGroup.position.x = this.currentModelPos.x + translation.x;
                 this.modelGroup.position.y = this.currentModelPos.y + translation.y;
                 this.modelGroup.position.z = this.currentModelPos.z + translation.z;
@@ -2680,8 +2680,8 @@
                 this.dq.z =  rs * dx;
                 this.dq.w =  rs * dy;
                 this.rotationGroup.quaternion = new THREE.Quaternion(1, 0, 0, 0);
-                this.rotationGroup.quaternion.multiplySelf(this.dq);
-                this.rotationGroup.quaternion.multiplySelf(this.cq);
+                this.rotationGroup.quaternion.multiply(this.dq);
+                this.rotationGroup.quaternion.multiply(this.cq);
             }
             this.show();
         }.bind(this));

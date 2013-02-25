@@ -2140,9 +2140,11 @@
                 for (b = -1; b <= 0; b++) {
                     for (c = -1; c <= 0; c++) {
                         translationMat = new THREE.Matrix4().makeTranslation(
+                            new THREE.Vector3(
                             p.ax * a + p.bx * b + p.cx * c,
                             p.ay * a + p.by * b + p.cy * c,
                             p.az * a + p.bz * b + p.cz * c
+                            )
                         );
                         symop = mat.clone().multiplySelf(translationMat);
                         if (symop.isIdentity()) { continue; }
@@ -2176,11 +2178,11 @@
     };
 
     GLmol.prototype.billboard = function (texture) {
-        var sprite = new THREE.Sprite({
+        var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
             map: texture,
             useScreenCoordinates: false,
             transparent: true
-        });
+        }));
         return sprite;
     };
 
@@ -2433,7 +2435,7 @@
 
     GLmol.prototype.loadMolecule = function (repressZoom) {
         //var source = document.querySelector(this.queryselector + '_src').innerHTML;
-        var source = $(this.queryselector + '_src').val();
+        var source = $('#' + this.queryselector + '_src').val();
         this.loadMoleculeStr(repressZoom, source);
     };
 

@@ -3337,8 +3337,9 @@ END
 <button id="proteinsurface">proteinsurface</button>
 
 <script src="js/zepto.min.js"></script>
-<script src="js/three55.js"></script>
+<script src="js/three.js"></script>
 <script type="text/javascript" src="js/GLmol.js"></script>
+<script type="text/javascript" src="js/MarchingCubeData.js"></script>
 <script type="text/javascript" src="js/ProteinSurface4.js"></script>
 <script type="text/javascript">
 
@@ -3375,7 +3376,12 @@ $("#screenshot").on("click", function () {
    var imageURI = glmol.renderer.domElement.toDataURL("image/png");
    window.open(imageURI);
    });
-$("#proteinsurface").on("click", function () {glmol.generateMesh(glmol.modelGroup, glmol.atoms, ProteinSurface.VDW)})
+$(function(){
+// $("#proteinsurface").on("click", function () {
+        var mat = {wireframe: false};
+        protatoms = glmol.removeSolvents(glmol.getProteins(glmol.atoms))
+        glmol.generateMesh(glmol.modelGroup, protatoms, protatoms, 2, mat, true)})
+        glmol.show()
     
 </script>
 </body></html>

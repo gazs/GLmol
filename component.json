@@ -1,10 +1,10 @@
 {
   "name": "GLmol",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "main": ["src/js/GLmol.js"],
   "dependencies": {
     "zepto": "*",
-    "threejs": "r51"
+    "threejs": "r56"
   }
 }
 

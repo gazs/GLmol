@@ -60,9 +60,16 @@
         return true;
     };
 
+    // Function deprecated in three r56, for seemingly no reason. We don't need n logmessages to tell us this.
+    THREE.Color.prototype.setHSV = function(h, s, v) {
+        return this.setHSL(h,s*v/((h=(2-s)*v)<1?h:2-h),h/2); // https://gist.github.com/xpansive/1337890
+    }
 
-	var numWorkers = 4; //unfortunately can't be smarter than this
-	var maxVolume = 64000; //how much to break up surface calculations
+
+	//var numWorkers = 4; //unfortunately can't be smarter than this
+	//var maxVolume = 64000; //how much to break up surface calculations
+    var numWorkers = 4; //unfortunately can't be smarter than this
+    var maxVolume = 64000; //how much to break up surface calculations
 
     function GLmol(queryselector, suppressAutoload, fallback) {
         if (!queryselector) {
@@ -708,14 +715,26 @@
                       (atom1.y - atom2.y) * (atom1.y - atom2.y) +
                       (atom1.z - atom2.z) * (atom1.z - atom2.z);
 
-    //   if (atom1.altLoc != atom2.altLoc) return 0;
-        if (isNaN(distSquared)) { return 0; }
-        if (distSquared < 0.5) { return 0; } // maybe duplicate position.
+        //   if (atom1.altLoc != atom2.altLoc) return 0;
+        if (isNaN(distSquared)) {
+            return 0;
+        }
+        if (distSquared < 0.5) {
+            return 0;
+        } // maybe duplicate position.
 
-        if (distSquared > 1.3 && (atom1.elem === 'H' || atom2.elem === 'H' || atom1.elem === 'D' || atom2.elem === 'D')) { return 0; }
-        if (distSquared < 3.42 && (atom1.elem === 'S' || atom2.elem === 'S')) { return 1; }
-        if (distSquared > 2.78) { return 0; }
+        if (distSquared > 1.3 && (atom1.elem === 'H' || atom2.elem === 'H' || atom1.elem === 'D' || atom2.elem === 'D')) {
+            return 0;
+        }
+        if (distSquared < 3.42 && (atom1.elem === 'S' || atom2.elem === 'S')) {
+            return 1;
+        }
+        if (distSquared > 2.78) { 
+            return 0; 
+        }
         return 1;
+
+
     };
 
     GLmol.prototype.drawBondAsStickSub = function (group, atom1, atom2, bondR, order) {

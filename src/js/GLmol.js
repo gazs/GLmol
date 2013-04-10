@@ -23,6 +23,11 @@
     'use strict';
     var hasCanvas, hasWebgl, TV3, TF3, TCo, isNotSolvent;
 
+    var workerPath = 'js/SurfaceWorkerCombined.js';
+    if (typeof window.media_url === "function") {
+        workerPath = window.media_url("glmol-surfaceworker.js");
+    }
+
     hasCanvas = (function () {
         var canvas  = document.createElement('canvas');
         return !!(canvas.getContext && canvas.getContext('2d'));
@@ -1828,6 +1833,10 @@
         return atom.atom !== 'CA';
     }
 
+    function isMetal(atom) {
+        return true;
+    }
+
     GLmol.isNotSolvent = function (atom) {
         return atom.resn !== 'HOH';
     };
@@ -2360,7 +2369,9 @@
 
         if (options.proteinSurface) {
             console.log("generating proteinsurface");
-            this.generateMesh(this.modelGroup, this.atoms, options.proteinSurface);
+            var mat = {wireframe: true};
+            protatoms = this.removeSolvents(this.getProteins(this.atoms))
+            this.generateMesh(this.modelGroup, protatoms, protatoms, 4, mat, true);
         }
 
 
@@ -2398,7 +2409,8 @@
 
     GLmol.prototype.initializeScene = function () {
       this.scene = new THREE.Scene();
-      this.scene.fog = new THREE.Fog(this.bgColor, 100, 200);
+      //this.scene.fog = new THREE.Fog(this.bgColor, 100, 200);
+      this.scene.fog = new THREE.FogExp2(this.bgColor, 0.002);
 
       this.modelGroup = new THREE.Object3D();
       this.rotationGroup = new THREE.Object3D();
@@ -2456,6 +2468,8 @@
         //var source = document.querySelector(this.queryselector + '_src').innerHTML;
         var source = $('#' + this.queryselector + '_src').val();
         this.loadMoleculeStr(repressZoom, source);
+
+
     };
 
     GLmol.prototype.loadMoleculeStr = function (repressZoom, source) {
@@ -2499,7 +2513,18 @@
             this.zoomInto(this.atoms);
         }
 
-        this.show();
+
+
+        var animate = function () {
+            requestAnimationFrame(animate);
+            if (this.shouldRedraw === true) {
+                this.show();
+                this.shouldRedraw = false;
+
+            };
+        }.bind(this)
+
+        animate();
     };
 
     GLmol.prototype.setSlabAndFog = function () {
@@ -2587,7 +2612,6 @@
 
         $("body").on('mouseup touchend', function (ev) {
             glDOM.parent().removeClass("active")
-            this.isDragging = false;
             var x,
                 y,
                 dx,
@@ -2651,9 +2675,7 @@
         }.bind(this));
 
         $("body").on('mousemove touchmove', function (ev) { // touchmove
-            var mode = this.mouseMode || 0,
-                //modeRadio = document.querySelectorAll('input[name=' + this.id + '_mouseMode]:checked'),
-                dx,
+            var dx,
                 dy,
                 r,
                 scaleFactor,
@@ -2673,28 +2695,32 @@
             x = ev.x;
             y = ev.y;
             if (!x) { return; }
+
             dx = (x - this.mouseStartX) / this.WIDTH;
             dy = (y - this.mouseStartY) / this.HEIGHT;
             r = Math.sqrt(dx * dx + dy * dy);
-            if (mode === 3 || (this.mouseButton === 3 && ev.ctrlKey)) { // Slab
+
+            if (this.mouseButton === 3 && ev.ctrlKey) { // Slab
                 this.slabNear = this.cslabNear + dx * 100;
                 this.slabFar = this.cslabFar + dy * 100;
-            } else if (mode === 2 || this.mouseButton === 3 || ev.shiftKey) { // Zoom
+
+            } else if (this.mouseButton === 3 || ev.shiftKey) { // Zoom
                 scaleFactor = (this.rotationGroup.position.z - this.CAMERA_Z) * 0.85;
                 if (scaleFactor < 80) { scaleFactor = 80; }
                 this.rotationGroup.position.z = this.cz - dy * scaleFactor;
-            } else if (mode === 1 || this.mouseButton === 2 || ev.ctrlKey) { // Translate
+
+            } else if (this.mouseButton === 2 || ev.ctrlKey) { // Translate
                 scaleFactor = (this.rotationGroup.position.z - this.CAMERA_Z) * 0.85;
                 if (scaleFactor < 20) { scaleFactor = 20; }
                 translationByScreen = new TV3(-dx * scaleFactor, -dy * scaleFactor, 0);
                 q = this.rotationGroup.quaternion;
                 qinv = new THREE.Quaternion(q.x, q.y, q.z, q.w).inverse().normalize();
-                //translation = qinv.multiplyVector3(translationByScreen);
                 translation = translationByScreen.applyQuaternion(qinv);
                 this.modelGroup.position.x = this.currentModelPos.x + translation.x;
                 this.modelGroup.position.y = this.currentModelPos.y + translation.y;
                 this.modelGroup.position.z = this.currentModelPos.z + translation.z;
-            } else if ((mode === 0 || this.mouseButton === 1) && r !== 0) { // Rotate
+
+            } else if (this.mouseButton === 1 && r !== 0) { // Rotate
                 rs = Math.sin(r * Math.PI) / r;
                 this.dq.x = Math.cos(r * Math.PI);
                 this.dq.y = 0;
@@ -2704,7 +2730,7 @@
                 this.rotationGroup.quaternion.multiply(this.dq);
                 this.rotationGroup.quaternion.multiply(this.cq);
             }
-            this.show();
+            this.shouldRedraw = true;
         }.bind(this));
     };
 
@@ -2714,14 +2740,11 @@
             return;
         }
 
-        console.time("rendered");
+        //console.time("rendered");
         this.setSlabAndFog();
         this.renderer.render(this.scene, this.camera);
-        console.timeEnd("rendered");
+        //console.timeEnd("rendered");
     };
-    //GLmol.prototype.show = function () {
-        //requestAnimationFrame(this._show.bind(this));
-    //}
 
     // For scripting
     GLmol.prototype.doFunc = function (func) {
@@ -2973,7 +2996,7 @@
 			var workers = [];
 			if(type < 0) type = 0; //negative reserved for atom data
 			for(var i = 0; i < numWorkers; i++) {
-				var w = new Worker('js/SurfaceWorker.js');
+				var w = new Worker(workerPath);
 				workers.push(w);
 				w.postMessage({
 					type: -1,
@@ -3008,5 +3031,6 @@
 
 		console.log("full mesh generation " + (+new Date() - time) + "ms");
 	};
+
 
 }(window));
